@@ -7,8 +7,13 @@ const fullSchema = { ...schema, ...relations };
 
 let instance: ReturnType<typeof drizzle<typeof fullSchema>>;
 
+// Only bare local paths need file: prepended; anything already carrying one
+// of libsql's own supported schemes (a remote Turso URL, notably) must pass
+// through untouched.
+const LIBSQL_SCHEMES = /^(file|libsql|https|http|wss|ws):/;
+
 function toFileUrl(pathOrUrl: string): string {
-  if (pathOrUrl.startsWith("file:") || pathOrUrl.startsWith("libsql:")) {
+  if (LIBSQL_SCHEMES.test(pathOrUrl)) {
     return pathOrUrl;
   }
   return `file:${pathOrUrl}`;
@@ -16,7 +21,13 @@ function toFileUrl(pathOrUrl: string): string {
 
 export function getDb() {
   if (!instance) {
-    instance = drizzle(toFileUrl(env.databaseUrl), { schema: fullSchema });
+    instance = drizzle({
+      connection: {
+        url: toFileUrl(env.databaseUrl),
+        authToken: env.databaseAuthToken || undefined,
+      },
+      schema: fullSchema,
+    });
   }
   return instance;
 }

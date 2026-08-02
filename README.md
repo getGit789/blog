@@ -45,6 +45,17 @@ npm run db:backfill    # applies the bilingual, dash free content in db/content.
 
 `db:backfill` finishes with a verification pass and fails loudly if any text field still contains a dash.
 
+## Deployment
+
+Live at `https://blog.damirkranjcevic.com`, served from a Cloudflare Pages project (`blog`) connected to this repo's `main` branch: every push rebuilds and redeploys automatically, no separate CI config needed.
+
+Cloudflare Pages Functions run on Workers, which have no persistent filesystem, so the deployed app differs from local dev in two places:
+
+- **Database**: [Turso](https://turso.tech) (hosted libSQL) instead of a local file. Same `drizzle-orm/libsql` driver either way; `DATABASE_URL`/`DATABASE_AUTH_TOKEN` are set as Pages environment variables rather than in `.env`.
+- **Uploads**: a Cloudflare R2 bucket (`blog-uploads`, bound as `UPLOADS`) instead of `public/uploads/`. `api/boot.ts`'s upload route branches on whether the R2 binding is present.
+
+`functions/[[path]].ts` adapts the shared Hono app (`api/boot.ts`) for Pages Functions via `hono/cloudflare-pages`. The Node HTTP server used by `npm start` lives in the separate `api/serve-node.ts` entry, so none of its Node-only code is bundled into the Cloudflare deploy. See `TODO.md`'s Deployment section for the rest of the wiring (env var handling, `nodejs_compat`, seeding).
+
 ## Language
 
 Two locales, `rs` (Serbian, Latin script) and `en`. The site always boots in English. The header toggle switches between them and the choice persists in `localStorage` under `blog-language`, so only a visitor's own choice overrides the English default. Every bilingual row (`posts`, `profileBio`, `cvEntries`) needs both `rs*` and `en*` fields populated.

@@ -32,6 +32,8 @@ dist-ssr
 *.sqlite
 *.sqlite3
 db/migrations/*.sql
+# Cloudflare Workers/Pages local dev state
+.wrangler/
 # TypeScript cache
 *.tsbuildinfo
 # Build outputs

@@ -19,24 +19,41 @@ Snapshot as of 2026-08-02. Ordered by what blocks a real launch first.
 
 ## Before this goes on the public internet
 
-- [ ] **Set `SEED_ADMIN_PASSWORD` in `.env`.** The admin password now comes
-      from that variable rather than being hardcoded. With it unset the seed
-      falls back to `123456` and prints a warning; with `NODE_ENV=production`
-      it refuses to seed at all if the value is empty or still `123456`. Set a
-      real one and re-run `npm run db:seed` (the seed upserts, so this is also
-      the password reset path). Changing it afterwards is done at
-      `/admin/settings`, which requires the current password and forces a
-      re-login.
-- [ ] **`APP_SECRET` in `.env` is a local dev placeholder.** Generate a real
-      secret for any deployed environment (`openssl rand -hex 32`). Never
-      commit `.env`. The server already refuses to boot in production without
-      it.
 - [ ] **Kimi OAuth is unconfigured and unmounted** (`VITE_KIMI_AUTH_URL`,
       `VITE_APP_ID`, `KIMI_AUTH_URL`, `KIMI_OPEN_URL`, `OWNER_UNION_ID` are
       all empty in `.env`). Nothing imports `api/kimi/*`, so this only matters
       if Kimi login should ever be live.
-- [ ] **No git repository yet.** Nothing here is version controlled. Worth
-      doing before more content changes stack up and become hard to review.
+
+## Deployment (Cloudflare Pages)
+
+Live at `https://blog.damirkranjcevic.com`, deployed from the `blog` Cloudflare
+Pages project connected to this repo's `main` branch — every push rebuilds and
+redeploys automatically.
+
+- **Database**: Turso (hosted libSQL), same `drizzle-orm/libsql` driver as
+  local dev, just pointed at a `libsql://`/`https://` URL instead of a file.
+  `DATABASE_URL` and `DATABASE_AUTH_TOKEN` are set as Pages environment
+  variables, not in this repo's `.env`.
+- **File uploads**: Cloudflare R2 (`blog-uploads` bucket, bound as `UPLOADS`).
+  `api/boot.ts`'s upload route branches on whether `c.env.UPLOADS` exists —
+  R2 on Cloudflare, local disk in Node dev.
+- **Entry point**: `functions/[[path]].ts` adapts the same Hono app
+  (`api/boot.ts`) via `hono/cloudflare-pages`, with an SPA fallback to
+  `index.html` for client-side routes. The Node HTTP server (`npm start`) is
+  a separate entry, `api/serve-node.ts`, so none of its `@hono/node-server`
+  code ships in the Cloudflare bundle.
+- **Env vars only exist per-request on Cloudflare** (Workers bindings, not a
+  boot-time `process.env`), so `api/lib/env.ts` is a Proxy that re-reads
+  `process.env` on every access, and middleware at the top of `api/boot.ts`
+  copies each request's string bindings onto `process.env` before anything
+  else runs. Don't change `env` back to a plain object without re-checking
+  this — it silently breaks DB access on Cloudflare only, not in local dev.
+- **`nodejs_compat`** compatibility flag is required (set on the Pages
+  project) for `bcryptjs`/`fs`/etc. to resolve inside the Workers bundle.
+- Seeding is a one-time manual step against the Turso database
+  (`DATABASE_URL`/`DATABASE_AUTH_TOKEN`/`SEED_ADMIN_PASSWORD` as env vars,
+  then `npm run db:seed`), never part of the build — the build command is
+  `npm run build:pages` (frontend only), which does not touch the database.
 
 ## Known auth debt
 
@@ -61,8 +78,10 @@ Snapshot as of 2026-08-02. Ordered by what blocks a real launch first.
 
 ## Known rough edges
 
-- [ ] **Production JS bundle is large:** `dist/boot.js` is about 1.3 MB and
-      Vite warns the client bundle is over 500 KB after minification. Not
+- [ ] **Production JS bundle is large:** `dist/serve-node.js` (the Node
+      server bundle, only used by `npm start`, not the Cloudflare deploy) is
+      about 1.3 MB, and Vite warns the client bundle is over 500 KB after
+      minification. Not
       broken, but worth revisiting with route level code splitting
       (`build.rollupOptions.output.manualChunks` or dynamic `import()`) if
       load time on a slow connection matters.
