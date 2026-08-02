@@ -7,9 +7,19 @@
 // process.env before any route handler runs, so this Proxy re-reads
 // process.env on every property access instead of caching it once.
 
+// NODE_ENV=production is deliberately not set as a Cloudflare Pages env var:
+// Pages applies its configured env vars during the build step too, and
+// NODE_ENV=production there makes `npm ci` skip devDependencies (vite lives
+// in devDependencies), breaking the build. CF_PAGES is a var Cloudflare
+// always injects itself at runtime, so it's a reliable "are we deployed"
+// signal that doesn't touch the build.
+function isProductionEnv(): boolean {
+  return process.env.NODE_ENV === "production" || !!process.env.CF_PAGES;
+}
+
 function required(name: string): string {
   const value = process.env[name];
-  if (!value && process.env.NODE_ENV === "production") {
+  if (!value && isProductionEnv()) {
     throw new Error(`Missing required environment variable: ${name}`);
   }
   return value ?? "";
@@ -30,7 +40,7 @@ function computeEnv(): Env {
   return {
     appId: required("APP_ID"),
     appSecret: required("APP_SECRET"),
-    isProduction: process.env.NODE_ENV === "production",
+    isProduction: isProductionEnv(),
     databaseUrl: process.env.DATABASE_URL ?? "./local.db",
     // Only needed against a remote libsql:// URL (Turso). Local dev's file: URL
     // ignores it.
