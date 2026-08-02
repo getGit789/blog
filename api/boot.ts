@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import type { HttpBindings } from "@hono/node-server";
@@ -6,8 +5,8 @@ import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { appRouter } from "./router";
 import { createContext } from "./context";
 import { env } from "./lib/env";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { writeFile, mkdir } from "node:fs/promises";
+import { join } from "node:path";
 
 /**
  * This app runs in two runtimes: the local/production Node server (started

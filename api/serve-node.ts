@@ -5,6 +5,7 @@
  * runs in a Workers isolate, which has no @hono/node-server and would crash
  * on boot if this file's serve() call lived in boot.ts instead.
  */
+import "dotenv/config";
 import { serve } from "@hono/node-server";
 import app from "./boot";
 import { serveStaticFiles } from "./lib/vite";
