@@ -1,0 +1,193 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root, [data-theme="light"] {
+    --bg-warm-white: #F4F1EC;
+    --text-charcoal: #1A1A1A;
+    --text-grey: #6B6B6B;
+    --accent-teal: #2D6A65;
+    --border-light: #E0DDD8;
+
+    --background: 40 18% 94%;
+    --foreground: 0 0% 10%;
+    --card: 40 18% 94%;
+    --card-foreground: 0 0% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+    --primary: 0 0% 10%;
+    --primary-foreground: 40 18% 94%;
+    --secondary: 40 10% 88%;
+    --secondary-foreground: 0 0% 10%;
+    --muted: 40 10% 88%;
+    --muted-foreground: 0 0% 42%;
+    --accent: 174 40% 29%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 30 10% 86%;
+    --input: 30 10% 86%;
+    --ring: 174 40% 29%;
+    --radius: 0.25rem;
+
+    /* Type system.
+       Mono carries the identity: chrome, labels, meta, headings.
+       Serif carries the reading: bio, post summaries, article body. */
+    --font-mono: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --font-serif: 'IBM Plex Serif', Charter, Georgia, 'Times New Roman', serif;
+
+    --step-label: 0.6875rem;  /* 11px, uppercase mono labels */
+    --step-meta: 0.75rem;     /* 12px, years, collections, nav */
+    --step-body: 1.0625rem;   /* 17px, article body */
+    --step-lead: 0.9375rem;   /* 15px, feed summaries, bio */
+    --step-title: 1.0625rem;  /* 17px, feed post titles */
+    --step-h1: 1.75rem;       /* 28px, article title */
+
+    --measure: 68ch;
+  }
+
+  [data-theme="dark"] {
+    --bg-warm-white: #0D0D0D;
+    --text-charcoal: #F0F0F0;
+    --text-grey: #888888;
+    --accent-teal: #5AAAA4;
+    --border-light: #2A2A2A;
+
+    --background: 0 0% 5%;
+    --foreground: 0 0% 94%;
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 94%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 94%;
+    --primary: 0 0% 94%;
+    --primary-foreground: 0 0% 5%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 94%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 53%;
+    --accent: 174 30% 52%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
+    --ring: 174 30% 52%;
+  }
+
+  body {
+    font-family: var(--font-mono);
+    background-color: var(--bg-warm-white);
+    color: var(--text-charcoal);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    text-rendering: optimizeLegibility;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  ::selection {
+    background-color: var(--text-charcoal);
+    color: var(--bg-warm-white);
+  }
+
+  [data-theme="dark"] ::selection {
+    background-color: #F0F0F0;
+    color: #0D0D0D;
+  }
+
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-light);
+    border-radius: 2px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-grey);
+  }
+}
+
+@layer components {
+  /* ── Reading type ────────────────────────────────────────────
+     Serif, generous leading, capped measure. Never justified:
+     ragged right avoids the rivers that justification opens up
+     at these column widths. */
+  .prose-serif {
+    font-family: var(--font-serif);
+    font-size: var(--step-body);
+    line-height: 1.75;
+    letter-spacing: 0.003em;
+    text-align: left;
+    text-wrap: pretty;
+    hyphens: auto;
+    max-width: var(--measure);
+  }
+
+  .prose-serif + .prose-serif {
+    margin-top: 1.15em;
+  }
+
+  .prose-lead {
+    font-family: var(--font-serif);
+    font-size: var(--step-lead);
+    line-height: 1.7;
+    text-align: left;
+    text-wrap: pretty;
+  }
+
+  /* ── Mono chrome ─────────────────────────────────────────────
+     Labels, meta rows and section headings keep the typewriter
+     voice. Wide tracking is what makes small mono caps readable. */
+  .mono-label {
+    font-family: var(--font-mono);
+    font-size: var(--step-label);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    line-height: 1.5;
+  }
+
+  .mono-meta {
+    font-family: var(--font-mono);
+    font-size: var(--step-meta);
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mono-title {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  /* Article headline: mono, but tightened so it reads as a
+     headline rather than as code. */
+  .headline {
+    font-family: var(--font-mono);
+    font-size: var(--step-h1);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+
+  @media (max-width: 767px) {
+    .headline {
+      font-size: 1.5rem;
+    }
+    .prose-serif {
+      font-size: 1rem;
+    }
+  }
+}
