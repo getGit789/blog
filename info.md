@@ -26,10 +26,10 @@ The site is driven by the database, not a config file. All posts / profile / CV 
 - **`src/components/RightColumn.tsx`** — CV rail section headers, CV row rendering (rendered from DB `cvEntries`)
 - **`src/components/PostDetail.tsx`** — back-to-feed label, post detail layout
 - **`src/components/ContactModal.tsx`** — form labels / placeholders, submit label; writes to `contacts` via tRPC
-- **`src/components/SettingsModal.tsx`** — admin settings modal for avatar upload + profile bio editing
+- **`src/pages/admin/AdminSettings.tsx`** — admin settings page: account credentials, avatar upload, profile bio and CV editing
 - **`src/pages/Guestbook.tsx`** — guestbook page title + intro; reads from `contacts` table
-- **`src/pages/NewPost.tsx`** — admin-only post editor; writes to `posts` via tRPC
-- **`src/pages/Login.tsx`** — sign-in UI; offers both Kimi OAuth and local username/password
+- **`src/pages/admin/PostEditor.tsx`** — admin-only post editor for create and edit; writes to `posts` via tRPC
+- **`src/pages/admin/AdminLogin.tsx`** — sign-in UI; local username/password only, no credential hints
 - **`db/seed.ts`** — bootstrap content (initial posts, profile bio, CV entries, default avatar). **Run this to populate the starter blog.**
 
 ## Layout Constraints
@@ -43,7 +43,7 @@ The site is driven by the database, not a config file. All posts / profile / CV 
 - **CV category** (`cvEntries.category`): short slug (e.g. `exhibitions`, `publications`, `awards`) — used to group rows
 - **Profile bio** (`profileBio.rsText` / `enText`): 1–3 short paragraphs; the left column is narrow (~260px)
 - **Guestbook message**: plain text, no markdown; 500-char soft limit reads best
-- **Avatar image**: square, uploaded through the settings modal; default is `/images/portrait.jpg`
+- **Avatar image**: square, uploaded at `/admin/settings`; default is `/images/covers/profile.jpeg`
 
 ## Database Schema
 
@@ -64,16 +64,21 @@ Images are referenced by URL from the database. Two starter image paths live und
 - **`/images/portrait.jpg`** — default profile avatar (square, 800×800+ recommended)
 - **`/images/hero-art.jpg`**, **`/images/blog-1.jpg`** … — post cover images; seeded by `db/seed.ts`
 
-When generating new content, upload new cover images through the admin `NewPost` editor (which calls `contracts/upload` via tRPC and writes to `public/images/`) rather than editing paths by hand.
+When generating new content, upload new cover images through the admin post editor at `/admin/new-post` (which calls `contracts/upload` via tRPC and writes to `public/images/`) rather than editing paths by hand.
 
 ## Auth
 
-Two auth flows are both live at the same time:
+> **Stale below this line in places.** This file predates the Serbian locale
+> rename and still describes the `zh` build. `README.md` is the current
+> reference; the auth section here has been corrected because it changed most
+> recently.
 
-- **Kimi OAuth** (`api/auth-router.ts` + `api/kimi/`) — the default; shown as the "Sign in with Kimi" button on `/login`
-- **Local username/password** (`api/local-auth-router.ts` + `api/local-auth-session.ts`) — shown on the same login page; the first-created local user is auto-admin
+One auth flow is live:
 
-Only users whose `role === 'admin'` can author posts, edit profile/CV, or upload images. Regular users can sign the guestbook.
+- **Local username/password** (`api/local-auth-router.ts` + `api/local-auth-session.ts`) — sign in at `/admin/login`. There is exactly one account, created by `db/seed.ts` with its password from `SEED_ADMIN_PASSWORD`. No registration endpoint exists.
+- **Kimi OAuth** (`api/auth-router.ts` + `api/kimi/`) — code is present but unmounted; nothing imports it.
+
+The public blog renders no auth UI at all, logged in or not. Everything an admin can do lives under `/admin`, which is reachable by URL only. That is presentation: authorization is enforced server side by `adminQuery` on every admin procedure.
 
 ## Design Reference
 
@@ -88,7 +93,7 @@ Only users whose `role === 'admin'` can author posts, edit profile/CV, or upload
 - React 19 + TypeScript + Vite
 - Tailwind CSS v3 + shadcn/ui component kit
 - tRPC 11 + Hono + Drizzle ORM + MySQL backend
-- Kimi OAuth 2.0 **and** local username/password authentication (both enabled)
+- Local username/password authentication. Kimi OAuth ships but is not mounted
 - React Router v7
 - three.js for the ambient hero shader
 
@@ -98,5 +103,5 @@ Only users whose `role === 'admin'` can author posts, edit profile/CV, or upload
 - `.backend-features.json` declares `["auth", "db"]`; `backend-building --template` will pick this up
 - `.env.example` documents every required environment variable — the app will not start without `DATABASE_URL` etc.
 - Do not remove `api/kimi/`, `api/local-auth-router.ts`, or `api/local-auth-session.ts` — they handle the two auth flows
-- Content changes go through the admin UI (`SettingsModal`, `NewPost`) or through `db/seed.ts`. Do not hard-code post content back into components
+- Content changes go through the admin zone at `/admin` or through `db/seed.ts`. Do not hard-code post content back into components
 - The frontend is bilingual — every `posts` / `profileBio` / `cvEntries` row has both `rs*` and `en*` fields; both must be populated at insert time

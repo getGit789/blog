@@ -13,6 +13,8 @@ export interface BlogPost {
   id: number;
   year: string;
   image: string;
+  /** Article header photo. Falls back to `image` when a post has only one. */
+  detailImage: string;
   rs: PostContent;
   en: PostContent;
 }
@@ -25,6 +27,7 @@ export function toBlogPost(post: Post): BlogPost {
     id: post.id,
     year: post.year,
     image: post.image,
+    detailImage: post.detailImage || post.image,
     rs: {
       title: post.rsTitle,
       subtitle: post.rsSubtitle,

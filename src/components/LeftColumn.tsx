@@ -1,7 +1,5 @@
-import { useState } from "react";
 import ShaderCanvas from "./ShaderCanvas";
 import { useLanguage } from "../contexts/LanguageContext";
-import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { trpc } from "@/providers/trpc";
 
@@ -15,27 +13,18 @@ const fallbackText = {
 };
 
 const copy = {
-  rs: { profile: "PROFIL (KONTAKT)", edit: "IZMENI", save: "SAČUVAJ", cancel: "OTKAŽI", contact: "KONTAKT", whoami: "root@damir:~$ whoami", tags: "Linux · Self Hosted · DevOps" },
-  en: { profile: "PROFILE (CONTACT)", edit: "EDIT", save: "SAVE", cancel: "CANCEL", contact: "CONTACT", whoami: "root@damir:~$ whoami", tags: "Linux · Self Hosted · DevOps" },
+  rs: { profile: "PROFIL (KONTAKT)", contact: "KONTAKT", whoami: "root@damir:~$ whoami", tags: "Linux · Self Hosted · DevOps" },
+  en: { profile: "PROFILE (CONTACT)", contact: "CONTACT", whoami: "root@damir:~$ whoami", tags: "Linux · Self Hosted · DevOps" },
 };
+
+// Bio, email and Instagram are edited at /admin/settings. This column only reads.
 
 export default function LeftColumn({ onContactClick }: LeftColumnProps) {
   const { language } = useLanguage();
   const t = copy[language];
-  const { isAdmin } = useAuth();
   const isMobile = useIsMobile();
-  const utils = trpc.useUtils();
 
   const { data: bio } = trpc.profile.get.useQuery();
-  const updateBio = trpc.profile.update.useMutation({
-    onSuccess: () => utils.profile.get.invalidate(),
-  });
-
-  const [isEditing, setIsEditing] = useState(false);
-  const [editRs, setEditRs] = useState("");
-  const [editEn, setEditEn] = useState("");
-  const [editEmail, setEditEmail] = useState("");
-  const [editInstagram, setEditInstagram] = useState("");
 
   const profileText = {
     rs: bio?.rsText || fallbackText.rs,
@@ -43,38 +32,6 @@ export default function LeftColumn({ onContactClick }: LeftColumnProps) {
   };
   const email = bio?.email || "contact@damirkranjcevic.com";
   const instagram = bio?.instagram || "https://www.instagram.com/damir.kranjcevic/";
-
-  const startEdit = () => {
-    setEditRs(profileText.rs);
-    setEditEn(profileText.en);
-    setEditEmail(email);
-    setEditInstagram(instagram);
-    setIsEditing(true);
-  };
-
-  const saveEdit = () => {
-    updateBio.mutate({ rsText: editRs, enText: editEn, email: editEmail, instagram: editInstagram });
-    setIsEditing(false);
-  };
-
-  const inputStyle = {
-    width: "100%",
-    background: "transparent",
-    border: "1px solid rgba(255,255,255,0.3)",
-    padding: "6px 8px",
-    fontSize: "11px",
-    color: "#FFFFFF",
-    outline: "none" as const,
-    resize: "vertical" as const,
-    fontFamily: "'Space Mono', monospace",
-  };
-
-  const labelStyle = {
-    fontSize: "10px",
-    color: "rgba(255,255,255,0.6)",
-    display: "block" as const,
-    marginBottom: "4px",
-  };
 
   return (
     <aside
@@ -94,172 +51,76 @@ export default function LeftColumn({ onContactClick }: LeftColumnProps) {
         style={{ mixBlendMode: "difference" }}
       >
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <h2
-              className="mono-label"
-              style={{ color: "#FFFFFF", marginBottom: "16px" }}
-            >
-              {t.profile}
-            </h2>
-            {isAdmin && !isEditing && (
-              <button
-                onClick={startEdit}
-                style={{
-                  fontSize: "10px",
-                  color: "rgba(255,255,255,0.6)",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  fontFamily: "'Space Mono', monospace",
-                  marginBottom: "16px",
-                }}
-              >
-                {t.edit}
-              </button>
-            )}
-          </div>
+          <h2
+            className="mono-label"
+            style={{ color: "#FFFFFF", marginBottom: "16px" }}
+          >
+            {t.profile}
+          </h2>
 
-          {isEditing ? (
-            <div className="space-y-2">
-              <div>
-                <label style={labelStyle}>EMAIL</label>
-                <input
-                  type="text"
-                  value={editEmail}
-                  onChange={(e) => setEditEmail(e.target.value)}
-                  style={{ ...inputStyle, resize: "none" }}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>INSTAGRAM URL</label>
-                <input
-                  type="text"
-                  value={editInstagram}
-                  onChange={(e) => setEditInstagram(e.target.value)}
-                  style={{ ...inputStyle, resize: "none" }}
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              <a
-                href={`mailto:${email}`}
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "12px",
-                  color: "#FFFFFF",
-                  textDecoration: "underline",
-                  textUnderlineOffset: "4px",
-                  display: "block",
-                  lineHeight: 1.8,
-                }}
-              >
-                {email}
-              </a>
-              <a
-                href={instagram}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "12px",
-                  color: "#FFFFFF",
-                  textDecoration: "underline",
-                  textUnderlineOffset: "4px",
-                  display: "block",
-                  lineHeight: 1.8,
-                }}
-              >
-                Instagram
-              </a>
-            </div>
-          )}
+          <div className="space-y-1">
+            <a
+              href={`mailto:${email}`}
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "12px",
+                color: "#FFFFFF",
+                textDecoration: "underline",
+                textUnderlineOffset: "4px",
+                display: "block",
+                lineHeight: 1.8,
+              }}
+            >
+              {email}
+            </a>
+            <a
+              href={instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "12px",
+                color: "#FFFFFF",
+                textDecoration: "underline",
+                textUnderlineOffset: "4px",
+                display: "block",
+                lineHeight: 1.8,
+              }}
+            >
+              Instagram
+            </a>
+          </div>
         </div>
 
         <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
-          {isEditing ? (
-            <div className="space-y-3">
-              <div>
-                <label style={labelStyle}>SR</label>
-                <textarea
-                  value={editRs}
-                  onChange={(e) => setEditRs(e.target.value)}
-                  rows={8}
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>EN</label>
-                <textarea
-                  value={editEn}
-                  onChange={(e) => setEditEn(e.target.value)}
-                  rows={8}
-                  style={inputStyle}
-                />
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={saveEdit}
-                  style={{
-                    fontSize: "10px",
-                    color: "#1A1A1A",
-                    background: "#FFFFFF",
-                    border: "none",
-                    padding: "4px 12px",
-                    cursor: "pointer",
-                    fontFamily: "'Space Mono', monospace",
-                  }}
-                >
-                  {t.save}
-                </button>
-                <button
-                  onClick={() => setIsEditing(false)}
-                  style={{
-                    fontSize: "10px",
-                    color: "#FFFFFF",
-                    background: "rgba(255,255,255,0.2)",
-                    border: "none",
-                    padding: "4px 12px",
-                    cursor: "pointer",
-                    fontFamily: "'Space Mono', monospace",
-                  }}
-                >
-                  {t.cancel}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div style={{ marginBottom: "20px" }}>
-                <p
-                  style={{
-                    fontSize: "11px",
-                    fontFamily: "var(--font-mono)",
-                    letterSpacing: "0.04em",
-                    color: "rgba(255,255,255,0.62)",
-                    lineHeight: 1.9,
-                  }}
-                >
-                  {t.whoami}
-                </p>
-                <p
-                  className="mono-label"
-                  style={{ color: "#FFFFFF", lineHeight: 1.9 }}
-                >
-                  {t.tags}
-                </p>
-              </div>
-              <p
-                className="prose-lead"
-                style={{
-                  color: "#FFFFFF",
-                  maxWidth: isMobile ? "100%" : "34ch",
-                }}
-              >
-                {profileText[language]}
-              </p>
-            </>
-          )}
+          <div style={{ marginBottom: "20px" }}>
+            <p
+              style={{
+                fontSize: "11px",
+                fontFamily: "var(--font-mono)",
+                letterSpacing: "0.04em",
+                color: "rgba(255,255,255,0.62)",
+                lineHeight: 1.9,
+              }}
+            >
+              {t.whoami}
+            </p>
+            <p
+              className="mono-label"
+              style={{ color: "#FFFFFF", lineHeight: 1.9 }}
+            >
+              {t.tags}
+            </p>
+          </div>
+          <p
+            className="prose-lead"
+            style={{
+              color: "#FFFFFF",
+              maxWidth: isMobile ? "100%" : "34ch",
+            }}
+          >
+            {profileText[language]}
+          </p>
         </div>
 
         <div className="mt-auto" style={{ flexShrink: 0, paddingBottom: "24px" }}>

@@ -52,6 +52,12 @@ export const posts = sqliteTable("posts", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   year: text("year").notNull(),
   image: text("image").notNull(),
+  /**
+   * A second photo, shown at the top of the article instead of `image`, so
+   * opening a post reveals a new frame rather than repeating the feed cover.
+   * Null falls back to `image`.
+   */
+  detailImage: text("detailImage"),
   sortOrder: integer("sortOrder").default(0),
   rsTitle: text("rsTitle").notNull(),
   rsSubtitle: text("rsSubtitle").notNull(),
@@ -133,7 +139,7 @@ export type InsertCvEntry = typeof cvEntries.$inferInsert;
 
 export const siteSettings = sqliteTable("siteSettings", {
   id: integer("id").default(1).primaryKey(),
-  avatarImage: text("avatarImage").default("/images/portrait.jpg"),
+  avatarImage: text("avatarImage").default("/images/covers/profile.jpeg"),
   updatedAt: integer("updatedAt", { mode: "timestamp" })
     .notNull()
     .$defaultFn(() => new Date())

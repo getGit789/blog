@@ -1,26 +1,57 @@
 import "dotenv/config";
 import { getDb } from "../api/queries/connection";
-import { posts, profileBio, cvEntries, localUsers, siteSettings } from "./schema";
+import { posts, profileBio, cvEntries, siteSettings } from "./schema";
+import { upsertAdminUser } from "../api/queries/local-users";
 import { seedPosts, seedCv, BIO_EN, BIO_RS } from "./content";
-import bcrypt from "bcryptjs";
+
+/**
+ * This file is the single source of truth for the admin account. Nothing else
+ * creates local users: there is no registration endpoint, and the API layer
+ * only ever reads or updates the row seeded here.
+ */
+const ADMIN_USERNAME = "damir";
+const ADMIN_NAME = "Damir Kranjčević";
+
+/** The placeholder that shipped in git history; refused outright in production. */
+const KNOWN_WEAK_PASSWORD = "123456";
+
+function adminPassword(): string {
+  const password = process.env.SEED_ADMIN_PASSWORD ?? "";
+  const isProduction = process.env.NODE_ENV === "production";
+
+  if (isProduction && (!password || password === KNOWN_WEAK_PASSWORD)) {
+    throw new Error(
+      "SEED_ADMIN_PASSWORD must be set to a real password before seeding a " +
+        "production database. Refusing to seed with an empty or default value.",
+    );
+  }
+
+  if (!password) {
+    console.warn(
+      `  ! SEED_ADMIN_PASSWORD is unset, falling back to "${KNOWN_WEAK_PASSWORD}" for local dev.\n` +
+        "    Set it in .env before deploying anywhere reachable.",
+    );
+    return KNOWN_WEAK_PASSWORD;
+  }
+  return password;
+}
 
 async function seed() {
   console.log("Seeding database...");
 
-  // 1. Seed admin user
-  const existingUsers = await getDb().select().from(localUsers);
-  if (existingUsers.length === 0) {
-    const passwordHash = await bcrypt.hash("123456", 12);
-    await getDb().insert(localUsers).values({
-      username: "damir",
-      passwordHash,
-      name: "Damir Kranjčević",
-      role: "admin",
-    });
-    console.log("  Created admin user (damir / 123456)");
-  } else {
-    console.log("  Admin user already exists");
-  }
+  // 1. Seed admin user. Upserted by username so re-running the seed resets the
+  //    password to whatever the environment says rather than failing or
+  //    inserting a duplicate.
+  const { created } = await upsertAdminUser({
+    username: ADMIN_USERNAME,
+    password: adminPassword(),
+    name: ADMIN_NAME,
+  });
+  console.log(
+    created
+      ? `  Created admin user (${ADMIN_USERNAME}), password from SEED_ADMIN_PASSWORD`
+      : `  Admin user (${ADMIN_USERNAME}) already existed, password reset from SEED_ADMIN_PASSWORD`,
+  );
 
   // 2. Seed blog posts
   const existingPosts = await getDb().select().from(posts);
@@ -64,7 +95,7 @@ async function seed() {
   if (existingSettings.length === 0) {
     await getDb().insert(siteSettings).values({
       id: 1,
-      avatarImage: "/images/portrait.jpg",
+      avatarImage: "/images/covers/profile.jpeg",
     });
     console.log("  Seeded site settings");
   } else {

@@ -3,9 +3,7 @@ import { useNavigate } from "react-router";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useLanguage } from "../contexts/LanguageContext";
-import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
-import { trpc } from "@/providers/trpc";
 import type { BlogPost } from "../../contracts/blog";
 import PostCover from "./PostCover";
 import CoverImage from "./CoverImage";
@@ -22,32 +20,35 @@ export default function MiddleColumn({ posts }: MiddleColumnProps) {
   const [hoveredImage, setHoveredImage] = useState<number | null>(null);
   const navigate = useNavigate();
   const { language } = useLanguage();
-  const { isAdmin } = useAuth();
   const isMobile = useIsMobile();
-  const utils = trpc.useUtils();
-
-  const deletePost = trpc.blog.delete.useMutation({
-    onSuccess: () => { utils.blog.list.invalidate(); },
-  });
 
   useEffect(() => {
     if (!columnRef.current) return;
-    const images = columnRef.current.querySelectorAll(".blog-image");
+    const column = columnRef.current;
+    // On desktop the feed scrolls inside this column, not the window. ScrollTrigger
+    // watches the window by default, which never scrolls here, so covers below the
+    // first screen would stay at the opacity 0 they are set to and never reveal.
+    // On mobile the column is not a scroll container and the page scrolls normally.
+    const scroller = isMobile ? undefined : column;
+    const images = column.querySelectorAll(".blog-image");
     const triggers: ScrollTrigger[] = [];
     images.forEach((img) => {
       gsap.set(img, { opacity: 0, scale: 1.03 });
       const tween = gsap.to(img, {
         opacity: 1, scale: 1, duration: 0.6, ease: "power2.out",
-        scrollTrigger: { trigger: img, start: "top 90%", toggleActions: "play none none none" },
+        scrollTrigger: { trigger: img, scroller, start: "top 90%", toggleActions: "play none none none" },
       });
       if (tween.scrollTrigger) triggers.push(tween.scrollTrigger);
     });
+    // Covers reserve their box via aspect-ratio, but fonts and the CV column can
+    // still shift things after mount; recompute once the layout settles.
+    ScrollTrigger.refresh();
     return () => { triggers.forEach((t) => t.kill()); };
-  }, [posts]);
+  }, [posts, isMobile]);
 
   const t = {
-    rs: { heading: "TEKSTOVI (ARHIVA)", newPost: "+ NOVI TEKST", edit: "IZMENI", del: "OBRIŠI", confirmDelete: "Obrisati ovaj tekst?" },
-    en: { heading: "POSTS (ARCHIVE)", newPost: "+ NEW POST", edit: "EDIT", del: "DELETE", confirmDelete: "Delete this post?" },
+    rs: { heading: "TEKSTOVI (ARHIVA)" },
+    en: { heading: "POSTS (ARCHIVE)" },
   }[language];
 
   return (
@@ -62,16 +63,9 @@ export default function MiddleColumn({ posts }: MiddleColumnProps) {
       }}
     >
       <div className="p-6 pb-24">
-        <div className="flex items-center justify-between">
-          <h2 className="mono-label" style={{ color: "var(--text-grey)", marginBottom: "40px" }}>
-            {t.heading}
-          </h2>
-          {isAdmin && (
-            <button onClick={() => navigate("/admin/new-post")} style={{ fontSize: "10px", color: "var(--text-grey)", background: "none", border: "none", cursor: "pointer", fontFamily: "'Space Mono', monospace", marginBottom: "32px" }}>
-              {t.newPost}
-            </button>
-          )}
-        </div>
+        <h2 className="mono-label" style={{ color: "var(--text-grey)", marginBottom: "40px" }}>
+          {t.heading}
+        </h2>
 
         {posts.map((post, index) => {
           const content = post[language];
@@ -164,13 +158,6 @@ export default function MiddleColumn({ posts }: MiddleColumnProps) {
                 >
                   {content.content}
                 </p>
-
-                {isAdmin && (
-                  <div className="flex gap-3 mt-4">
-                    <button onClick={(e) => { e.stopPropagation(); navigate(`/post/${post.id}?mode=edit`); }} className="mono-label" style={{ color: "var(--text-grey)", background: "none", border: "none", cursor: "pointer" }}>{t.edit}</button>
-                    <button onClick={(e) => { e.stopPropagation(); if (confirm(t.confirmDelete)) deletePost.mutate({ id: post.id }); }} className="mono-label" style={{ color: "#E74C3C", background: "none", border: "none", cursor: "pointer" }}>{t.del}</button>
-                  </div>
-                )}
               </div>
             </article>
           );

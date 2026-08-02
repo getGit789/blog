@@ -37,14 +37,27 @@ async function exchangeAuthCode(
   return resp.json() as Promise<TokenResponse>;
 }
 
-const jwks = jose.createRemoteJWKSet(
-  new URL(`${env.kimiAuthUrl}/api/.well-known/jwks.json`),
-);
+// Built on first use rather than at import: KIMI_AUTH_URL is optional at boot
+// (this module is not mounted today), so an empty value must fail here with a
+// clear message instead of an "Invalid URL" the moment the file is imported.
+let jwksCache: ReturnType<typeof jose.createRemoteJWKSet> | null = null;
+
+function getJwks() {
+  if (!env.kimiAuthUrl) {
+    throw new Error(
+      "Kimi OAuth is not configured: set KIMI_AUTH_URL and KIMI_OPEN_URL to use this sign-in path.",
+    );
+  }
+  jwksCache ??= jose.createRemoteJWKSet(
+    new URL(`${env.kimiAuthUrl}/api/.well-known/jwks.json`),
+  );
+  return jwksCache;
+}
 
 async function verifyAccessToken(
   accessToken: string,
 ): Promise<{ userId: string; clientId: string }> {
-  const { payload } = await jose.jwtVerify(accessToken, jwks);
+  const { payload } = await jose.jwtVerify(accessToken, getJwks());
   const userId = payload.user_id as string;
   const clientId = payload.client_id as string;
   if (!userId) {

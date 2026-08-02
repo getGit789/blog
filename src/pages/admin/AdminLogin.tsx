@@ -1,39 +1,48 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Navigate, useNavigate, useSearchParams } from "react-router";
 import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-export default function Login() {
+/** Only same-site absolute paths are honoured, so `next` cannot bounce off-site. */
+function safeNext(raw: string | null): string {
+  if (!raw) return "/admin";
+  if (!raw.startsWith("/") || raw.startsWith("//")) return "/admin";
+  return raw;
+}
+
+export default function AdminLogin() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { language } = useLanguage();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+  const utils = trpc.useUtils();
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  const next = safeNext(searchParams.get("next"));
+
   const loginMutation = trpc.auth.login.useMutation({
-    onSuccess: () => {
-      window.location.href = "/";
+    onSuccess: (user) => {
+      // Seed the cache before navigating: AdminLayout reads auth.me on the very
+      // next render, and an unresolved refetch there would bounce straight back
+      // to this page.
+      utils.auth.me.setData(undefined, user);
+      navigate(next, { replace: true });
     },
-    onError: (err) => {
-      setError(err.message);
-    },
+    onError: (err) => setError(err.message),
   });
 
-  if (isAuthenticated) {
-    navigate("/");
-    return null;
-  }
+  // Already signed in: skip the form rather than showing it behind a session.
+  if (!isLoading && isAuthenticated) return <Navigate to={next} replace />;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!username.trim() || !password.trim()) return;
-    loginMutation.mutate({
-      username: username.trim(),
-      password: password.trim(),
-    });
+    if (!username.trim() || !password) return;
+    loginMutation.mutate({ username: username.trim(), password });
   };
 
   const t = {
@@ -43,7 +52,6 @@ export default function Login() {
       password: "Lozinka",
       submit: "Prijavi se",
       submitting: "Prijavljujem...",
-      hint: "Podrazumevano: admin / 123456",
     },
     en: {
       title: "Admin Login",
@@ -51,10 +59,26 @@ export default function Login() {
       password: "Password",
       submit: "Log In",
       submitting: "Logging in...",
-      hint: "Default: admin / 123456",
     },
+  }[language];
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    background: "transparent",
+    border: "1px solid var(--border-light)",
+    padding: "10px 12px",
+    fontSize: "12px",
+    color: "var(--text-charcoal)",
+    fontFamily: "'Space Mono', monospace",
+    outline: "none",
   };
-  const s = t[language];
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: "11px",
+    color: "var(--text-grey)",
+    display: "block",
+    marginBottom: "6px",
+  };
 
   return (
     <div
@@ -63,10 +87,7 @@ export default function Login() {
     >
       <div
         className="w-full max-w-sm mx-4"
-        style={{
-          border: "1px solid var(--border-light)",
-          padding: "32px",
-        }}
+        style={{ border: "1px solid var(--border-light)", padding: "32px" }}
       >
         <h2
           style={{
@@ -79,71 +100,33 @@ export default function Login() {
             textAlign: "center",
           }}
         >
-          {s.title}
+          {t.title}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label
-              style={{
-                fontSize: "11px",
-                color: "var(--text-grey)",
-                display: "block",
-                marginBottom: "6px",
-              }}
-            >
-              {s.username}
-            </label>
+            <label style={labelStyle}>{t.username}</label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               autoComplete="username"
-              style={{
-                width: "100%",
-                background: "transparent",
-                border: "1px solid var(--border-light)",
-                padding: "10px 12px",
-                fontSize: "12px",
-                color: "var(--text-charcoal)",
-                fontFamily: "'Space Mono', monospace",
-                outline: "none",
-              }}
+              style={inputStyle}
             />
           </div>
 
           <div>
-            <label
-              style={{
-                fontSize: "11px",
-                color: "var(--text-grey)",
-                display: "block",
-                marginBottom: "6px",
-              }}
-            >
-              {s.password}
-            </label>
+            <label style={labelStyle}>{t.password}</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
-              style={{
-                width: "100%",
-                background: "transparent",
-                border: "1px solid var(--border-light)",
-                padding: "10px 12px",
-                fontSize: "12px",
-                color: "var(--text-charcoal)",
-                fontFamily: "'Space Mono', monospace",
-                outline: "none",
-              }}
+              style={inputStyle}
             />
           </div>
 
-          {error && (
-            <p style={{ fontSize: "11px", color: "#E74C3C" }}>{error}</p>
-          )}
+          {error && <p style={{ fontSize: "11px", color: "#E74C3C" }}>{error}</p>}
 
           <button
             type="submit"
@@ -161,21 +144,9 @@ export default function Login() {
               letterSpacing: "0.05em",
             }}
           >
-            {loginMutation.isPending ? s.submitting : s.submit}
+            {loginMutation.isPending ? t.submitting : t.submit}
           </button>
         </form>
-
-        <p
-          style={{
-            fontSize: "11px",
-            color: "var(--text-grey)",
-            marginTop: "16px",
-            textAlign: "center",
-            fontFamily: "'Space Mono', monospace",
-          }}
-        >
-          {s.hint}
-        </p>
       </div>
     </div>
   );

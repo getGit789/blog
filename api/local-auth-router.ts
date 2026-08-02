@@ -3,18 +3,31 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { Session } from "@contracts/constants";
 import { getSessionCookieOptions } from "./lib/cookies";
-import { createRouter, publicQuery } from "./middleware";
+import { clientIp, hitRateLimit, resetRateLimit } from "./lib/rate-limit";
+import { createRouter, publicQuery, adminQuery } from "./middleware";
 import {
   findLocalUserByUsername,
   findLocalUserById,
   verifyLocalPassword,
-  createLocalUser,
   updateLocalUser,
 } from "./queries/local-users";
-import {
-  signLocalSessionToken,
-  verifyLocalSessionToken,
-} from "./local-auth-session";
+import { signLocalSessionToken, verifyLocalSessionToken } from "./local-auth-session";
+
+/** Five attempts per quarter hour per address, matching the documented policy. */
+const LOGIN_ATTEMPT_LIMIT = 5;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+
+/** Serializes the session cookie; `maxAge: 0` expires it. */
+function sessionCookie(headers: Headers, value: string, maxAgeSeconds: number) {
+  const opts = getSessionCookieOptions(headers);
+  return cookie.serialize(Session.cookieName, value, {
+    httpOnly: opts.httpOnly,
+    path: opts.path,
+    sameSite: opts.sameSite?.toLowerCase() as "lax" | "none",
+    secure: opts.secure,
+    maxAge: maxAgeSeconds,
+  });
+}
 
 export const localAuthRouter = createRouter({
   me: publicQuery.query(async ({ ctx }) => {
@@ -44,37 +57,39 @@ export const localAuthRouter = createRouter({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const user = await findLocalUserByUsername(input.username);
-      if (!user) {
+      // Rate limited before the database is touched, so a flood of guesses does
+      // not also mean a flood of bcrypt comparisons.
+      const key = `login:${clientIp(ctx.req.headers)}`;
+      const limit = hitRateLimit(key, LOGIN_ATTEMPT_LIMIT, LOGIN_WINDOW_MS);
+      if (!limit.allowed) {
         throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Invalid username or password",
+          code: "TOO_MANY_REQUESTS",
+          message: `Too many login attempts. Try again in ${Math.ceil(limit.retryAfterSeconds / 60)} minutes.`,
         });
       }
 
+      const user = await findLocalUserByUsername(input.username);
+      // The same message for an unknown username and a wrong password, so the
+      // response does not reveal which accounts exist.
+      const invalid = new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Invalid username or password",
+      });
+      if (!user) throw invalid;
+
       const valid = await verifyLocalPassword(user, input.password);
-      if (!valid) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Invalid username or password",
-        });
-      }
+      if (!valid) throw invalid;
+
+      resetRateLimit(key);
 
       const token = await signLocalSessionToken({
         username: user.username,
         userId: user.id,
       });
 
-      const opts = getSessionCookieOptions(ctx.req.headers);
       ctx.resHeaders.append(
         "set-cookie",
-        cookie.serialize(Session.cookieName, token, {
-          httpOnly: opts.httpOnly,
-          path: opts.path,
-          sameSite: opts.sameSite?.toLowerCase() as "lax" | "none",
-          secure: opts.secure,
-          maxAge: Session.maxAgeMs / 1000,
-        }),
+        sessionCookie(ctx.req.headers, token, Session.maxAgeMs / 1000),
       );
 
       return {
@@ -85,38 +100,7 @@ export const localAuthRouter = createRouter({
       };
     }),
 
-  register: publicQuery
-    .input(
-      z.object({
-        username: z.string().min(3).max(100),
-        password: z.string().min(6).max(100),
-        name: z.string().max(255).optional(),
-      }),
-    )
-    .mutation(async ({ input }) => {
-      const existing = await findLocalUserByUsername(input.username);
-      if (existing) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "Username already taken",
-        });
-      }
-
-      const user = await createLocalUser({
-        username: input.username,
-        password: input.password,
-        name: input.name,
-      });
-
-      return {
-        id: user.id,
-        username: user.username,
-        name: user.name,
-        role: user.role,
-      };
-    }),
-
-  updateCredentials: publicQuery
+  updateCredentials: adminQuery
     .input(
       z.object({
         currentPassword: z.string().min(1),
@@ -125,24 +109,8 @@ export const localAuthRouter = createRouter({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      // Get current user from session
-      const cookies = cookie.parse(ctx.req.headers.get("cookie") || "");
-      const token = cookies[Session.cookieName];
-      if (!token) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "Not logged in" });
-      }
+      const user = ctx.user;
 
-      const claim = await verifyLocalSessionToken(token);
-      if (!claim) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid session" });
-      }
-
-      const user = await findLocalUserById(claim.userId);
-      if (!user) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
-      }
-
-      // Verify current password
       const valid = await verifyLocalPassword(user, input.currentPassword);
       if (!valid) {
         throw new TRPCError({
@@ -151,7 +119,6 @@ export const localAuthRouter = createRouter({
         });
       }
 
-      // Check username uniqueness if changing
       if (input.newUsername && input.newUsername !== user.username) {
         const existing = await findLocalUserByUsername(input.newUsername);
         if (existing) {
@@ -162,50 +129,41 @@ export const localAuthRouter = createRouter({
         }
       }
 
-      // Update user
       const updated = await updateLocalUser(user.id, {
         username: input.newUsername,
         password: input.newPassword,
       });
 
-      // Re-issue session token with new username
-      const newToken = await signLocalSessionToken({
-        username: updated.username,
-        userId: updated.id,
-      });
-
-      const opts = getSessionCookieOptions(ctx.req.headers);
-      ctx.resHeaders.append(
-        "set-cookie",
-        cookie.serialize(Session.cookieName, newToken, {
-          httpOnly: opts.httpOnly,
-          path: opts.path,
-          sameSite: opts.sameSite?.toLowerCase() as "lax" | "none",
-          secure: opts.secure,
-          maxAge: Session.maxAgeMs / 1000,
-        }),
-      );
+      const passwordChanged = !!input.newPassword;
+      if (passwordChanged) {
+        // A password change ends the session that made it: the cookie is
+        // expired server-side and the client is told to log in again. Note
+        // this only kills *this* session; see the JWT token-versioning entry
+        // in TODO.md for why other live sessions survive until expiry.
+        ctx.resHeaders.append("set-cookie", sessionCookie(ctx.req.headers, "", 0));
+      } else {
+        // Username-only change: re-issue so the claim matches the new username.
+        const newToken = await signLocalSessionToken({
+          username: updated.username,
+          userId: updated.id,
+        });
+        ctx.resHeaders.append(
+          "set-cookie",
+          sessionCookie(ctx.req.headers, newToken, Session.maxAgeMs / 1000),
+        );
+      }
 
       return {
         id: updated.id,
         username: updated.username,
         name: updated.name,
         role: updated.role,
+        sessionEnded: passwordChanged,
       };
     }),
 
   logout: publicQuery.mutation(async ({ ctx }) => {
-    const opts = getSessionCookieOptions(ctx.req.headers);
-    ctx.resHeaders.append(
-      "set-cookie",
-      cookie.serialize(Session.cookieName, "", {
-        httpOnly: opts.httpOnly,
-        path: opts.path,
-        sameSite: opts.sameSite?.toLowerCase() as "lax" | "none",
-        secure: opts.secure,
-        maxAge: 0,
-      }),
-    );
+    ctx.resHeaders.append("set-cookie", sessionCookie(ctx.req.headers, "", 0));
     return { success: true };
   }),
 });

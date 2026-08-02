@@ -26,27 +26,46 @@ export async function findLocalUserById(
   return rows.at(0);
 }
 
-export async function createLocalUser(data: {
+/**
+ * Creates the admin account, or resets the existing one's password in place.
+ *
+ * This is the only way a local user is ever created: there is no registration
+ * endpoint and only the owner has an account. Keying on the username makes
+ * `npm run db:seed` safe to re-run against a database that already has the
+ * admin row, which is the normal case after the first seed.
+ */
+export async function upsertAdminUser(data: {
   username: string;
   password: string;
-  name?: string;
-  role?: string;
-}): Promise<LocalUser> {
+  name: string;
+}): Promise<{ user: LocalUser; created: boolean }> {
   const passwordHash = await bcrypt.hash(data.password, 12);
+  const existing = await findLocalUserByUsername(data.username);
+
+  if (existing) {
+    await getDb()
+      .update(localUsers)
+      .set({ passwordHash, name: data.name, role: "admin" })
+      .where(eq(localUsers.id, existing.id));
+    const user = await findLocalUserById(existing.id);
+    if (!user) throw new Error("Admin user vanished during upsert");
+    return { user, created: false };
+  }
+
   const result = await getDb()
     .insert(localUsers)
     .values({
       username: data.username,
       passwordHash,
-      name: data.name ?? data.username,
-      role: (data.role ?? "user") as "user" | "admin",
+      name: data.name,
+      role: "admin",
     })
     .returning({ id: localUsers.id });
   const id = result[0]?.id;
-  if (!id) throw new Error("Failed to create local user");
+  if (!id) throw new Error("Failed to create admin user");
   const user = await findLocalUserById(id);
-  if (!user) throw new Error("Failed to fetch created user");
-  return user;
+  if (!user) throw new Error("Failed to fetch created admin user");
+  return { user, created: true };
 }
 
 export async function verifyLocalPassword(
@@ -79,17 +98,4 @@ export async function updateLocalUser(
   const user = await findLocalUserById(id);
   if (!user) throw new Error("User not found after update");
   return user;
-}
-
-export async function seedAdminIfNoneExists(): Promise<void> {
-  const existing = await getDb().select().from(localUsers).limit(1);
-  if (existing.length === 0) {
-    await createLocalUser({
-      username: "admin",
-      password: "123456",
-      name: "Admin",
-      role: "admin",
-    });
-    console.log("[seed] Created default admin user (admin / 123456)");
-  }
 }

@@ -23,6 +23,7 @@ export const blogRouter = createRouter({
       z.object({
         year: z.string().max(10),
         image: z.string().max(500),
+        detailImage: z.string().max(500).optional(),
         sortOrder: z.number().optional(),
         rsTitle: z.string().max(255),
         rsSubtitle: z.string().max(255),
@@ -44,6 +45,7 @@ export const blogRouter = createRouter({
         id: z.number(),
         year: z.string().max(10).optional(),
         image: z.string().max(500).optional(),
+        detailImage: z.string().max(500).optional(),
         sortOrder: z.number().optional(),
         rsTitle: z.string().max(255).optional(),
         rsSubtitle: z.string().max(255).optional(),

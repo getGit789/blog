@@ -19,18 +19,45 @@ Snapshot as of 2026-08-02. Ordered by what blocks a real launch first.
 
 ## Before this goes on the public internet
 
-- [ ] **Admin password is still the seed default.** The `damir` account
-      (role `admin`) has the password from `db/seed.ts` (`123456`). Change it
-      through the settings modal, or update the seed before anyone else runs
-      `npm run db:seed` against a fresh database.
+- [ ] **Set `SEED_ADMIN_PASSWORD` in `.env`.** The admin password now comes
+      from that variable rather than being hardcoded. With it unset the seed
+      falls back to `123456` and prints a warning; with `NODE_ENV=production`
+      it refuses to seed at all if the value is empty or still `123456`. Set a
+      real one and re-run `npm run db:seed` (the seed upserts, so this is also
+      the password reset path). Changing it afterwards is done at
+      `/admin/settings`, which requires the current password and forces a
+      re-login.
 - [ ] **`APP_SECRET` in `.env` is a local dev placeholder.** Generate a real
-      secret for any deployed environment. Never commit `.env`.
-- [ ] **Kimi OAuth is unconfigured** (`VITE_KIMI_AUTH_URL`, `VITE_APP_ID`,
-      `KIMI_AUTH_URL`, `KIMI_OPEN_URL`, `OWNER_UNION_ID` are all empty in
-      `.env`). Local username and password auth works fine without it, so this
-      only matters if Kimi login should be live too.
+      secret for any deployed environment (`openssl rand -hex 32`). Never
+      commit `.env`. The server already refuses to boot in production without
+      it.
+- [ ] **Kimi OAuth is unconfigured and unmounted** (`VITE_KIMI_AUTH_URL`,
+      `VITE_APP_ID`, `KIMI_AUTH_URL`, `KIMI_OPEN_URL`, `OWNER_UNION_ID` are
+      all empty in `.env`). Nothing imports `api/kimi/*`, so this only matters
+      if Kimi login should ever be live.
 - [ ] **No git repository yet.** Nothing here is version controlled. Worth
       doing before more content changes stack up and become hard to review.
+
+## Known auth debt
+
+- [ ] **A password change does not kill other live sessions.** Sessions are
+      stateless JWTs signed with `APP_SECRET`, so an already-issued token stays
+      valid until it expires (currently one year) even after the password
+      changes. Changing the password does expire the cookie on the session that
+      made the change, which is the realistic case for a single-admin blog. The
+      real fixes, in increasing order of work: shorten `Session.maxAgeMs` in
+      `contracts/constants.ts`; or add a `tokenVersion` column to `localUsers`,
+      put it in the JWT claim, bump it on every credential change, and reject
+      tokens whose version is stale in `api/context.ts`. Not implemented on
+      purpose.
+- [ ] **Login rate limiting is per process and in memory.** `api/lib/rate-limit.ts`
+      allows five attempts per fifteen minutes per client address, which is
+      enough for one SQLite-backed node. It resets on restart and is not shared,
+      so running more than one instance behind a load balancer would multiply
+      the effective limit by the instance count. Move the counter to the
+      database or a shared store if this is ever scaled out. The client address
+      comes from `x-forwarded-for`, so put a proxy you trust in front of it or
+      the header can be spoofed.
 
 ## Known rough edges
 

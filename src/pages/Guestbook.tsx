@@ -1,18 +1,12 @@
 import { useNavigate } from "react-router";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { trpc } from "@/providers/trpc";
-import { useAuth } from "@/hooks/useAuth";
 
+/** Public, read-only. Moderation lives at /admin/guestbook. */
 export default function Guestbook() {
   const navigate = useNavigate();
   const { language } = useLanguage();
-  const { isAdmin } = useAuth();
   const { data: messages, isLoading } = trpc.contact.list.useQuery();
-  const utils = trpc.useUtils();
-
-  const deleteMutation = trpc.contact.delete.useMutation({
-    onSuccess: () => utils.contact.list.invalidate(),
-  });
 
   const t = {
     rs: {
@@ -21,7 +15,6 @@ export default function Guestbook() {
       empty: "Još nema poruka",
       loading: "Učitavam...",
       anon: "Anonimno",
-      delete: "Obriši",
     },
     en: {
       title: "Guestbook",
@@ -29,7 +22,6 @@ export default function Guestbook() {
       empty: "No messages yet",
       loading: "Loading...",
       anon: "Anonymous",
-      delete: "Delete",
     },
   };
   const s = t[language];
@@ -114,34 +106,13 @@ export default function Guestbook() {
                   >
                     {msg.name || s.anon}
                   </span>
-                  <div className="flex items-center gap-3">
-                    <span style={{ fontSize: "11px", color: "var(--text-grey)" }}>
-                      {msg.createdAt
-                        ? new Date(msg.createdAt).toLocaleDateString(
-                            language === "rs" ? "sr-RS" : "en-US",
-                          )
-                        : ""}
-                    </span>
-                    {isAdmin && (
-                      <button
-                        onClick={() => {
-                          if (confirm("Delete this message?")) {
-                            deleteMutation.mutate({ id: msg.id });
-                          }
-                        }}
-                        style={{
-                          fontSize: "10px",
-                          color: "#E74C3C",
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          fontFamily: "'Space Mono', monospace",
-                        }}
-                      >
-                        {s.delete}
-                      </button>
-                    )}
-                  </div>
+                  <span style={{ fontSize: "11px", color: "var(--text-grey)" }}>
+                    {msg.createdAt
+                      ? new Date(msg.createdAt).toLocaleDateString(
+                          language === "rs" ? "sr-RS" : "en-US",
+                        )
+                      : ""}
+                  </span>
                 </div>
                 <p
                   style={{

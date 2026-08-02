@@ -1,95 +1,36 @@
 import { useState } from "react";
-import { Routes, Route } from "react-router";
+import { Routes, Route, Navigate } from "react-router";
 import LeftColumn from "./components/LeftColumn";
 import MiddleColumn from "./components/MiddleColumn";
 import RightColumn from "./components/RightColumn";
 import PostDetail from "./components/PostDetail";
 import ContactModal from "./components/ContactModal";
-import SettingsModal from "./components/SettingsModal";
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
 import { LanguageProvider, useLanguage } from "./contexts/LanguageContext";
 import { trpc } from "@/providers/trpc";
 import type { BlogPost } from "../contracts/blog";
 import { toBlogPost } from "../contracts/blog";
-import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router";
-import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import Guestbook from "./pages/Guestbook";
-import NewPost from "./pages/NewPost";
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminSettings from "./pages/admin/AdminSettings";
+import AdminGuestbook from "./pages/admin/AdminGuestbook";
+import PostEditor from "./pages/admin/PostEditor";
 import { useIsMobile } from "./hooks/useIsMobile";
 
-function ToggleBar({ onSettingsClick }: { onSettingsClick?: () => void }) {
+/**
+ * Public header controls. Language and theme only: the admin zone is reachable
+ * by typing /admin and is never advertised here, so a visitor sees no sign that
+ * the site has a login at all.
+ */
+function ToggleBar() {
   const { theme, toggleTheme } = useTheme();
   const { language, toggleLanguage } = useLanguage();
-  const { user, isAuthenticated, isLoading, isAdmin, logout } = useAuth();
-  const navigate = useNavigate();
 
   return (
     <div className="flex items-center gap-4">
-      {/* Auth / Settings */}
-      {isLoading ? null : isAuthenticated ? (
-        <>
-          {/* Settings Gear - admin only */}
-          {isAdmin && onSettingsClick && (
-            <button
-              onClick={onSettingsClick}
-              title={language === "rs" ? "Podešavanja naloga" : "Account Settings"}
-              style={{
-                fontSize: "13px",
-                fontFamily: "'Space Mono', monospace",
-                color: "var(--text-charcoal)",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                transition: "color 0.2s ease",
-                letterSpacing: "0.05em",
-                padding: 0,
-                lineHeight: 1,
-              }}
-              onMouseEnter={(e) => { (e.target as HTMLElement).style.color = "var(--accent-teal)"; }}
-              onMouseLeave={(e) => { (e.target as HTMLElement).style.color = "var(--text-charcoal)"; }}
-            >
-              &#9881;
-            </button>
-          )}
-          {/* Username */}
-          <span
-            onClick={logout}
-            style={{
-              fontSize: "12px",
-              fontFamily: "'Space Mono', monospace",
-              color: "var(--text-charcoal)",
-              cursor: "pointer",
-              transition: "color 0.2s ease",
-              letterSpacing: "0.05em",
-            }}
-            onMouseEnter={(e) => { (e.target as HTMLElement).style.color = "var(--accent-teal)"; }}
-            onMouseLeave={(e) => { (e.target as HTMLElement).style.color = "var(--text-charcoal)"; }}
-          >
-            {user?.username || user?.name || "ADMIN"}
-          </span>
-        </>
-      ) : (
-        <button
-          onClick={() => navigate("/login")}
-          style={{
-            fontSize: "12px",
-            fontFamily: "'Space Mono', monospace",
-            color: "var(--text-charcoal)",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            transition: "color 0.2s ease",
-            letterSpacing: "0.05em",
-          }}
-          onMouseEnter={(e) => { (e.target as HTMLElement).style.color = "var(--accent-teal)"; }}
-          onMouseLeave={(e) => { (e.target as HTMLElement).style.color = "var(--text-charcoal)"; }}
-        >
-          {language === "rs" ? "PRIJAVA" : "LOG IN"}
-        </button>
-      )}
-
       {/* Language Toggle */}
       <button
         onClick={toggleLanguage}
@@ -135,7 +76,6 @@ function ToggleBar({ onSettingsClick }: { onSettingsClick?: () => void }) {
 function HomePage() {
   const { language } = useLanguage();
   const [showContact, setShowContact] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const { data: dbPosts, isLoading } = trpc.blog.list.useQuery();
   const posts: BlogPost[] = dbPosts ? dbPosts.map(toBlogPost) : [];
   const isMobile = useIsMobile();
@@ -146,7 +86,7 @@ function HomePage() {
         <span style={{ fontSize: "12px", fontWeight: 400, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--text-charcoal)", whiteSpace: "nowrap" }}>
           {isMobile ? "DAMIR KRANJČEVIĆ" : "DAMIR KRANJČEVIĆ / @ROOT"}
         </span>
-        <ToggleBar onSettingsClick={() => setShowSettings(true)} />
+        <ToggleBar />
       </header>
 
       <div
@@ -165,7 +105,6 @@ function HomePage() {
       </div>
 
       <ContactModal isOpen={showContact} onClose={() => setShowContact(false)} />
-      <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
     </div>
   );
 }
@@ -181,11 +120,24 @@ export default function App() {
     <ThemeProvider>
       <LanguageProvider>
         <Routes>
+          {/* Public blog. Nothing under here renders an auth control. */}
           <Route path="/" element={<HomePage />} />
           <Route path="/post/:id" element={<PostPage />} />
-          <Route path="/login" element={<Login />} />
           <Route path="/guestbook" element={<Guestbook />} />
-          <Route path="/admin/new-post" element={<NewPost />} />
+
+          {/* Admin zone. Unguarded login, everything else behind AdminLayout. */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="new-post" element={<PostEditor />} />
+            <Route path="edit/:id" element={<PostEditor />} />
+            <Route path="guestbook" element={<AdminGuestbook />} />
+            <Route path="settings" element={<AdminSettings />} />
+          </Route>
+
+          {/* The old public login URL; kept only so stale links land somewhere sane. */}
+          <Route path="/login" element={<Navigate to="/admin/login" replace />} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </LanguageProvider>

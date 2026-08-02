@@ -1,6 +1,6 @@
 # Personal Blog Fullstack Template
 
-A fullstack bilingual (Srpski / English) personal blog and portfolio named **NEURAL ATELIER**. Three column editorial layout (sidebar / posts feed / right rail), light and dark themes, Kimi OAuth plus local username and password auth, and an admin only authoring flow.
+A fullstack bilingual (Srpski / English) personal blog and portfolio named **NEURAL ATELIER**. Three column editorial layout (sidebar / posts feed / right rail), light and dark themes, and a private admin zone at `/admin` for authoring. The public blog shows no sign that a login exists.
 
 ## Features
 
@@ -8,10 +8,11 @@ A fullstack bilingual (Srpski / English) personal blog and portfolio named **NEU
 - Bilingual content (rs / en) for every post, bio paragraph and CV entry, with a language toggle in the header
 - Light and dark theme toggle that writes CSS variables to `document.documentElement`
 - Generated post covers: posts without an uploaded image draw a seeded SVG diagram themed to their collection
-- Admin only post authoring (`/admin/new-post`) with image upload to `public/images/`
+- Private admin zone at `/admin`: post dashboard, editor, guestbook moderation and settings, all behind a session guard
+- Post authoring and editing (`/admin/new-post`, `/admin/edit/:id`) with image upload to `public/images/`
 - Public guestbook (`/guestbook`) writing to the `contacts` table
-- Editable profile bio, CV entries and avatar through the settings modal (admin only)
-- Dual auth: Kimi OAuth and local username and password. The first local user is auto promoted to admin
+- Profile bio, CV entries and avatar edited at `/admin/settings`
+- Single local admin account, created by the seed. No registration endpoint and no login UI on the public blog
 - Animated three.js shader backdrop behind the profile column, fading out over its bottom quarter
 
 ## Tech Stack
@@ -19,7 +20,7 @@ A fullstack bilingual (Srpski / English) personal blog and portfolio named **NEU
 - React 19 + TypeScript + Vite
 - Tailwind CSS v3 + shadcn/ui
 - tRPC 11 + Hono + Drizzle ORM + SQLite (`@libsql/client`, no DB server needed)
-- Kimi OAuth 2.0 **and** local username and password authentication (both enabled)
+- Local username and password authentication (JWT session cookie). Kimi OAuth code ships but is not mounted
 - React Router v7
 - three.js for the ambient hero shader
 
@@ -27,9 +28,9 @@ A fullstack bilingual (Srpski / English) personal blog and portfolio named **NEU
 
 1. Clone or extract this template
 2. Install dependencies: `npm install`
-3. Copy `.env.example` to `.env` and fill in `APP_SECRET`. Kimi OAuth credentials are optional for local dev, username and password auth works without them
+3. Copy `.env.example` to `.env`, then fill in `APP_SECRET` and `SEED_ADMIN_PASSWORD`. Kimi OAuth credentials are unused
 4. Run database migrations: `npx drizzle-kit push`
-5. Seed starter content (posts, profile bio, CV entries): `npm run db:seed`
+5. Seed starter content and the admin account: `npm run db:seed`. Safe to re-run; it upserts the admin and resets the password to `SEED_ADMIN_PASSWORD`
 6. Run the dev server: `npm run dev`
 7. Build for production: `npm run build`
 
@@ -56,17 +57,20 @@ Post copy, bios and CV entries deliberately contain no em dashes, en dashes or h
 
 This template does not use `src/config.ts`. All user visible content is driven by the database and loaded through tRPC. A few static UI strings live inline in components, edit them there:
 
-- **`src/App.tsx`** header wordmark, `LOG IN`, language and theme toggles, loading label
+- **`src/App.tsx`** header wordmark, language and theme toggles, loading label, route table
 - **`src/components/LeftColumn.tsx`** profile column (bio paragraphs render from `profileBio`)
 - **`src/components/MiddleColumn.tsx`** post feed (renders from `posts`)
 - **`src/components/RightColumn.tsx`** CV rail (renders from `cvEntries`, category labels are mapped for display)
 - **`src/components/PostDetail.tsx`** post detail page layout
 - **`src/components/PostCover.tsx`** generated cover art
 - **`src/components/ContactModal.tsx`** contact form (writes to `contacts`)
-- **`src/components/SettingsModal.tsx`** admin settings modal (editable profile and avatar)
-- **`src/pages/Guestbook.tsx`** guestbook page
-- **`src/pages/NewPost.tsx`** admin only post editor
-- **`src/pages/Login.tsx`** sign in UI (Kimi and local)
+- **`src/pages/Guestbook.tsx`** public guestbook page (read only)
+- **`src/pages/admin/AdminLayout.tsx`** session guard and admin nav for everything under `/admin`
+- **`src/pages/admin/AdminLogin.tsx`** admin sign in, no credential hints
+- **`src/pages/admin/AdminDashboard.tsx`** post list with edit and delete
+- **`src/pages/admin/PostEditor.tsx`** create and edit posts, both languages
+- **`src/pages/admin/AdminSettings.tsx`** account, profile bio, avatar and CV editing
+- **`src/pages/admin/AdminGuestbook.tsx`** guestbook moderation
 - **`db/content.ts`** bilingual bootstrap content for posts, bio and CV entries
 
 See `info.md` (outer folder) for layout character limits per field.
@@ -120,6 +124,8 @@ Body copy is never justified. At these column widths justification opens rivers,
 ## Notes
 
 - Don't re-introduce hard coded post content into components. The DB is the source of truth
-- Both auth flows stay live at the same time (`api/kimi/` and `api/local-auth-router.ts`), and the first local user is auto admin
-- Content edits go through the admin UI (`SettingsModal`, `NewPost`) or `db/content.ts`
+- Only local auth is live (`api/local-auth-router.ts`). `api/kimi/` is dormant and nothing imports it
+- There is exactly one admin account and no way to create another through the API. `db/seed.ts` is the only thing that creates users
+- Hiding admin UI is not security: every admin procedure is gated server side with `adminQuery`, which returns UNAUTHORIZED without a session and FORBIDDEN for a non-admin one
+- Content edits go through the admin zone at `/admin` or `db/content.ts`
 - The shader backdrop tracks its container with a `ResizeObserver`. Sizing it only on mount left it cut off partway down the column once the bio and CV loaded in

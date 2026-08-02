@@ -9,6 +9,8 @@ export const ErrorMessages = {
 } as const;
 
 export const Paths = {
-  login: "/login",
+  // Admin sign-in lives under /admin and is reachable by URL only: nothing in
+  // the public blog links to it.
+  login: "/admin/login",
   oauthCallback: "/api/oauth/callback",
 } as const;
