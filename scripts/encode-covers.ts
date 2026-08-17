@@ -7,8 +7,15 @@
  * feed and the article header render into, so the browser never downloads
  * pixels that get cropped away at paint time.
  *
- * Usage: tsx scripts/encode-covers.ts <source-dir>
+ * Usage: tsx scripts/encode-covers.ts <source-dir> [--contain <hex>]
  * Every .png in the source dir becomes <name>.webp + <name>.jpg in public/images/covers/.
+ *
+ * The default centre-crops, which is right for photography: a still life has
+ * slack at the edges and loses nothing worth keeping. It is wrong for artwork
+ * that was composed to its own frame. A 1200x630 brand image cropped to 16:10
+ * loses 8% off each side, which is enough to clip a logo or the first letter
+ * of a headline. Pass --contain with the artwork's own background colour to
+ * letterbox instead, so the whole frame survives.
  */
 import { readdir, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -67,12 +74,26 @@ async function undercut(frame: sharp.Sharp, webp: Buffer, quality: number, targe
   return { buffer: webp, quality };
 }
 
-async function main() {
-  const sourceDir = process.argv[2];
-  if (!sourceDir) {
-    console.error("usage: tsx scripts/encode-covers.ts <source-dir>");
+/** Reads `--contain <hex>`, the opt-in to letterbox rather than crop. */
+function containColour(argv: string[]): string | null {
+  const at = argv.indexOf("--contain");
+  if (at === -1) return null;
+
+  const colour = argv[at + 1];
+  if (!colour || !/^#[0-9a-f]{6}$/i.test(colour)) {
+    console.error("--contain needs a six digit hex colour, e.g. --contain '#0B0A08'");
     process.exit(1);
   }
+  return colour;
+}
+
+async function main() {
+  const sourceDir = process.argv[2];
+  if (!sourceDir || sourceDir.startsWith("--")) {
+    console.error("usage: tsx scripts/encode-covers.ts <source-dir> [--contain <hex>]");
+    process.exit(1);
+  }
+  const contain = containColour(process.argv);
 
   await mkdir(OUT_DIR, { recursive: true });
   const sources = (await readdir(sourceDir)).filter((f) => f.endsWith(".png")).sort();
@@ -81,10 +102,11 @@ async function main() {
 
   for (const file of sources) {
     const name = path.basename(file, ".png");
-    // Cropped once, then encoded twice, so both formats frame identically.
+    // Framed once, then encoded twice, so both formats frame identically.
     const frame = sharp(path.join(sourceDir, file)).resize(WIDTH, HEIGHT, {
-      fit: "cover",
+      fit: contain ? "contain" : "cover",
       position: "centre",
+      ...(contain ? { background: contain } : {}),
     });
 
     const first = await encodeWebp(frame);

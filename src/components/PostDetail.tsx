@@ -6,6 +6,7 @@ import type { BlogPost } from "../../contracts/blog";
 import PostCover from "./PostCover";
 import CoverImage from "./CoverImage";
 import { hasRealImage } from "@/lib/covers";
+import { linkify } from "@/lib/linkify";
 
 interface PostDetailProps {
   posts: BlogPost[];
@@ -101,7 +102,7 @@ export default function PostDetail({ posts }: PostDetailProps) {
               className="prose-serif"
               style={{ color: "var(--text-charcoal)", whiteSpace: "pre-line" }}
             >
-              {para}
+              {linkify(para)}
             </p>
           ))}
         </div>
