@@ -7,6 +7,7 @@ import { createContext } from "./context";
 import { env } from "./lib/env";
 import { writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
+import { findAllPosts } from "./queries/posts";
 
 /**
  * This app runs in two runtimes: the local/production Node server (started
@@ -110,6 +111,28 @@ app.get("/uploads/:filename", async (c) => {
       "content-type": object.httpMetadata?.contentType ?? "application/octet-stream",
       "cache-control": "public, max-age=31536000, immutable",
     },
+  });
+});
+
+// ── Sitemap ───────────────────────────────────────────────────
+// Posts are DB rows, so the sitemap is built per request from the origin
+// the crawler used. Registered here so both Node and Cloudflare serve it.
+
+app.get("/sitemap.xml", async (c) => {
+  const origin = new URL(c.req.url).origin;
+  const iso = (d: Date | null) => (d ?? new Date()).toISOString().slice(0, 10);
+  const urls = [
+    `<url><loc>${origin}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>`,
+    `<url><loc>${origin}/guestbook</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>`,
+    ...(await findAllPosts()).map(
+      (p) =>
+        `<url><loc>${origin}/post/${p.id}</loc><lastmod>${iso(p.updatedAt)}</lastmod><priority>0.8</priority></url>`,
+    ),
+  ];
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>`;
+  return c.body(xml, 200, {
+    "content-type": "application/xml; charset=utf-8",
+    "cache-control": "public, max-age=3600",
   });
 });
 
