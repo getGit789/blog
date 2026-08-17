@@ -130,15 +130,86 @@ Upravljanje bankrollom me je naučilo više o riziku nego ijedan postmortem. Pra
 
 Ono što poker stvarno trenira, više od matematike ili strpljenja, je da dobro odlučuješ sa informacijama koje nikad nećeš imati u potpunosti. Ne vidiš tuđe karte. Ne vidiš tačno koliko će opterećenje servis primiti u produkciji za šest meseci. Dimenzionišeš ulog, ili arhitekturu, na osnovu verovatnoća i naviknuo si se da ponekad grešiš da bi u proseku bio u pravu. Ovih dana poker mi je par sesija nedeljno pored posla koji ne ostavlja mnogo više prostora od toga, ali sesije koje odigram i dalje mi ne deluju kao hobi, nego kao održavanje jednog načina razmišljanja koji koristim svaki dan na poslu.`;
 
+export const BEEKIO_DETAIL_EN = `Fifty to sixty two percent. That's how many colonies American beekeepers lost in the 2024 to 2025 season, depending on whether they run it as a hobby or a business. The worst numbers anyone has on record, and most of it traces back to something that was visible weeks earlier in a mite count nobody plotted.
+
+That's the whole reason Beekio exists.
+
+The loop is deliberately small. You add your hives, you log an inspection, and you get back a prioritized list of what to do in the next 24 to 48 hours for each one. Varroa count, brood pattern, weight, a few notes. The logging has to be fast enough to do one handed while wearing gloves, standing over an open hive, and that turned out to be the constraint that shaped most of the interface. On the Pro and Scaling plans the plan generates itself at 5 a.m. local time, so it's already waiting when you head out. There's a chat too, Ask Beekio, that knows your own hive history instead of answering from general knowledge. Every inspection gets stamped with the weather where the hive actually sits.
+
+Most beekeeping apps are logbooks. They help you write down what happened. Beekio is trying to tell you what to do next, and that difference is the entire bet.
+
+It's an expensive bet. Pro is 36 dollars a month in a market where HiveTracks charges 6.99 and HiveBook gives you unlimited hives for nothing. I've read enough forum threads to know exactly how that lands. The honest answer isn't that the competition is bad, it's that one hive you don't lose pays for a year of Pro several times over, and I have to prove that rather than assert it. Nobody in beekeeping owes me the benefit of the doubt.
+
+Under the hood it's a normal indie SaaS stack, and I mean that as a compliment. A FastAPI backend on Railway, Neon for Postgres, Clerk for auth, Stripe for billing, Resend for transactional mail, and Anthropic's models doing the actual reasoning. Nothing exotic. Every hour I don't spend building my own auth is an hour I spend on the part nobody else can build for me.
+
+The breakages are the part worth writing down.
+
+The Clerk webhook spent longer than I want to admit pointing at the wrong URL. That meant people signed up fine and then didn't exist in my database, a failure that looks like nothing at all until you go looking for a row that should be there.
+
+Invitation emails went to spam for days. Not a code bug in the slightest. DNS records, sender reputation, the whole boring unglamorous layer, fixed eventually by moving mail for beekio.com over to Proton and grinding through every record until it verified.
+
+Then there was a script called send_test_nurture.py, written to test the waitlist sequence. It wasn't in git, it was sitting on a detached HEAD on exactly one machine, and on first run it fired a real production email through Resend with no confirmation prompt. It worked precisely as designed, which was the problem. That one goes in the same drawer as everything else I've built that was one keystroke away from being embarrassing.
+
+Right now Beekio is pre launch. The site is a waitlist, not a checkout. Every plan tier ends in Join the Waitlist rather than Buy, and I'd rather say that plainly here than have you click through expecting something you can pay for today. The custom sign in pages are still on the dev branch because main is protected and I haven't merged them. A beta trial tier is waiting on a SQL migration I want to read twice before I run it.
+
+The contact page says Beekio is a small team, and that every message is read by someone who works on the product, usually the same person who built it. That's a nice sentence. It's also just true, and it's why the roadmap is sequenced instead of parallel. One person can only break one thing at a time.
+
+If you keep bees, or you know someone who does, it's at beekio.com. The waitlist is open.`;
+
+export const BEEKIO_DETAIL_RS = `Pedeset do šezdeset dva odsto. Toliko je društava uginulo američkim pčelarima u sezoni 2024 na 2025, zavisno od toga da li im je to hobi ili posao. Najgori brojevi koje iko ima zabeležene, a najveći deo toga se vodi na nešto što se videlo nedeljama ranije, u broju varoe koji niko nije ucrtao u grafik.
+
+Zbog toga Beekio i postoji.
+
+Petlja je namerno mala. Uneseš svoje košnice, upišeš pregled, i nazad dobiješ spisak po prioritetu šta da uradiš u naredna 24 do 48 sati, za svaku posebno. Broj varoe, leglo, težina, par beleški. Upisivanje mora da bude dovoljno brzo da se odradi jednom rukom, u rukavicama, dok stojiš nad otvorenom košnicom, i ispalo je da je baš to ograničenje oblikovalo najveći deo interfejsa. Na Pro i Scaling planovima se plan sam generiše u pet ujutru po lokalnom vremenu, pa te već čeka kad kreneš napolje. Tu je i chat, Ask Beekio, koji zna istoriju tvojih košnica umesto da odgovara iz opšteg znanja. Svaki pregled dobije i vreme sa mesta gde košnica stvarno stoji.
+
+Većina aplikacija za pčelare su dnevnici. Pomognu ti da zapišeš šta se desilo. Beekio pokušava da ti kaže šta sledeće da uradiš, i cela opklada je u toj razlici.
+
+Skupa je to opklada. Pro je 36 dolara mesečno, na tržištu gde HiveTracks naplaćuje 6.99, a HiveBook ti da neograničeno košnica badava. Pročitao sam dovoljno tema po forumima da znam tačno kako to zvuči. Pošten odgovor nije da je konkurencija loša, nego da jedno društvo koje ne izgubiš plati godinu dana Pro plana nekoliko puta, i to ja moram da dokažem, a ne da tvrdim. Niko u pčelarstvu mi ne duguje da mi veruje na reč.
+
+Ispod haube je običan indi SaaS stack, i to mislim kao kompliment. FastAPI backend na Railwayu, Neon za Postgres, Clerk za auth, Stripe za naplatu, Resend za transakcione mejlove, i Anthropic modeli koji rade samo razmišljanje. Ništa egzotično. Svaki sat koji ne potrošim praveći svoj auth je sat koji potrošim na ono što niko drugi ne može da napravi umesto mene.
+
+Kvarovi su deo koji vredi zapisati.
+
+Clerk webhook je duže nego što želim da priznam pokazivao na pogrešan URL. To znači da su se ljudi lepo registrovali, pa onda nisu postojali u mojoj bazi. Kvar koji izgleda kao ništa dok ne odeš da tražiš red koji bi morao da bude tu.
+
+Pozivnice su danima odlazile u spam. Nije uopšte bio bag u kodu. DNS zapisi, reputacija pošiljaoca, ceo onaj dosadni neglamurozni sloj. Rešeno tako što sam mejl za beekio.com prebacio na Proton i ispeglao svaki zapis dok se nije verifikovao.
+
+Onda je tu bila skripta send_test_nurture.py, napisana da testira sekvencu za listu čekanja. Nije bila u gitu, sedela je na detached HEAD na tačno jednoj mašini, i na prvo pokretanje je poslala pravi produkcijski mejl kroz Resend, bez ijednog pitanja da li si siguran. Radila je tačno kako je napravljena, i to je bio problem. To ide u istu fioku sa svim ostalim što sam napravio a što je bilo jedan taster daleko od blama.
+
+Beekio je trenutno pred lansiranje. Sajt je lista čekanja, nije prodavnica. Svaki plan se završava sa Join the Waitlist, a ne sa Buy, i radije ću to ovde reći otvoreno nego da klikneš očekujući nešto što možeš danas da platiš. Custom stranice za prijavu i dalje stoje na dev grani jer je main zaključan i nisam ih spojio. Beta trial nivo čeka na SQL migraciju koju hoću da pročitam dvaput pre nego što je pustim.
+
+Na kontakt stranici piše da je Beekio mali tim i da svaku poruku pročita neko ko radi na proizvodu, obično isti onaj koji ga je i napravio. Lepa rečenica. Uz to je i tačna, i zbog nje je plan poređan jedno za drugim umesto sve odjednom. Jedan čovek može da pokvari samo jednu stvar u isto vreme.
+
+Ako držiš pčele, ili znaš nekog ko drži, tu je na beekio.com. Lista čekanja je otvorena.`;
+
 export const DRAFT_EN = "Draft in progress. I'm still writing this one, check back soon.";
 export const DRAFT_RS = "Još pišem ovaj. Navrati uskoro.";
 
 export const seedPosts = [
   {
     year: "2026",
+    // No cover photo yet, so PostCover draws the generated Projects motif.
+    image: "",
+    detailImage: "",
+    sortOrder: 1,
+    enTitle: "Beekio, One Person",
+    enSubtitle: "Running a beekeeping SaaS end to end, alone",
+    enCollection: "Projects",
+    enContent:
+      "An AI beekeeping consultant I'm building solo. Log an inspection, get a prioritized action plan for the next 48 hours. What it does, the stack under it, and everything that broke on the way to a waitlist.",
+    enDetailContent: BEEKIO_DETAIL_EN,
+    rsTitle: "Beekio, jedan čovek",
+    rsSubtitle: "Sam vodim SaaS za pčelare, s kraja na kraj",
+    rsCollection: "Projekti",
+    rsContent:
+      "AI konsultant za pčelare koga pravim sam. Upišeš pregled košnice, dobiješ spisak šta da uradiš u naredna 48 sati. Šta radi, na čemu stoji i šta se sve raspalo do liste čekanja.",
+    rsDetailContent: BEEKIO_DETAIL_RS,
+  },
+  {
+    year: "2026",
     image: "/images/covers/self-hosted-lab.jpg",
     detailImage: "/images/covers/self-hosted-lab-detail.jpg",
-    sortOrder: 1,
+    sortOrder: 2,
     enTitle: "Self Hosted Lab v2",
     enSubtitle: "Rebuilding My Home Lab from Scratch",
     enCollection: "Projects",
@@ -156,7 +227,7 @@ export const seedPosts = [
     year: "2026",
     image: "/images/covers/wpas-ai-assistant.jpg",
     detailImage: "/images/covers/wpas-ai-assistant-detail.jpg",
-    sortOrder: 2,
+    sortOrder: 3,
     enTitle: "WPAS AI Assistant",
     enSubtitle: "Building an AI Assistant That Actually Ships",
     enCollection: "Projects",
@@ -174,7 +245,7 @@ export const seedPosts = [
     year: "2026",
     image: "/images/covers/sudowear.jpg",
     detailImage: "/images/covers/sudowear-detail.jpg",
-    sortOrder: 3,
+    sortOrder: 4,
     enTitle: "Building SudoWear",
     enSubtitle: "Running an Online Store as a One Man Ops Team",
     enCollection: "Indie Dev",
@@ -192,7 +263,7 @@ export const seedPosts = [
     year: "2025",
     image: "/images/covers/five-years-support.jpg",
     detailImage: "/images/covers/five-years-support-detail.jpg",
-    sortOrder: 4,
+    sortOrder: 5,
     enTitle: "Five Years in Support",
     enSubtitle: "What AT&T and Mozzartbet Taught Me About Systems",
     enCollection: "Notes",
@@ -210,7 +281,7 @@ export const seedPosts = [
     year: "2025",
     image: "/images/covers/linux-everything.jpg",
     detailImage: "/images/covers/linux-everything-detail.jpg",
-    sortOrder: 5,
+    sortOrder: 6,
     enTitle: "Running Linux on Everything",
     enSubtitle: "One OS, Every Machine, Zero Regrets",
     enCollection: "Tooling",
@@ -228,7 +299,7 @@ export const seedPosts = [
     year: "2024",
     image: "/images/covers/poker-mental-game.jpg",
     detailImage: "/images/covers/poker-mental-game-detail.jpg",
-    sortOrder: 6,
+    sortOrder: 7,
     enTitle: "Poker and the Mental Game",
     enSubtitle: "Expected Value, Tilt, and Thinking in Bets",
     enCollection: "Notes",
@@ -252,19 +323,20 @@ export const BIO_RS =
 
 export const seedCv = [
   // Experience
-  { category: "Experience", enTitle: "Beekio LLC", enSubtitle: "Founder / Full Stack Engineer", rsTitle: "Beekio LLC", rsSubtitle: "Osnivač i full stack inženjer", year: "2024 to Present", sortOrder: 1 },
+  { category: "Experience", enTitle: "Beekio LLC", enSubtitle: "Founder / Full Stack Engineer", rsTitle: "Beekio LLC", rsSubtitle: "Osnivač i full stack inženjer", year: "2026 to Present", sortOrder: 1 },
   { category: "Experience", enTitle: "Mozzartbet", enSubtitle: "System Administrator", rsTitle: "Mozzartbet", rsSubtitle: "Sistem administrator", year: "2022 to 2024", sortOrder: 2 },
   { category: "Experience", enTitle: "AT&T Brno", enSubtitle: "IT Support Engineer", rsTitle: "AT&T Brno", rsSubtitle: "Inženjer IT podrške", year: "2020 to 2022", sortOrder: 3 },
   // Current Focus
-  { category: "Current Focus", enTitle: "Beekio", enSubtitle: "Building and running my own SaaS products", rsTitle: "Beekio", rsSubtitle: "Pravim i vodim svoje SaaS proizvode", year: "Ongoing", sortOrder: 4 },
+  { category: "Current Focus", enTitle: "Beekio", enSubtitle: "AI beekeeping consultant, pre launch", rsTitle: "Beekio", rsSubtitle: "AI konsultant za pčelare, pred lansiranje", year: "2026", sortOrder: 4 },
   { category: "Current Focus", enTitle: "WPAS AI Assistant", enSubtitle: "Multi agent LLM pipelines in production", rsTitle: "WPAS AI asistent", rsSubtitle: "Multi agent LLM pipeline u produkciji", year: "2026", sortOrder: 5 },
   { category: "Current Focus", enTitle: "Self Hosted Lab v2", enSubtitle: "Proxmox and Docker home infrastructure", rsTitle: "Home lab v2", rsSubtitle: "Home lab na Proxmox i Docker", year: "2026", sortOrder: 6 },
   // Stack
   { category: "Stack", enTitle: "Languages", enSubtitle: "TypeScript / Python / Rust", rsTitle: "Jezici", rsSubtitle: "TypeScript / Python / Rust", year: "", sortOrder: 7 },
   { category: "Stack", enTitle: "Infrastructure", enSubtitle: "Docker / Proxmox / Linux", rsTitle: "Infrastruktura", rsSubtitle: "Docker / Proxmox / Linux", year: "", sortOrder: 8 },
   // Projects
-  { category: "Projects", enTitle: "WPAS AI Assistant", enSubtitle: "AI assistant, built solo end to end", rsTitle: "WPAS AI asistent", rsSubtitle: "AI asistent, sam od početka do kraja", year: "2026", sortOrder: 9 },
-  { category: "Projects", enTitle: "SudoWear", enSubtitle: "Online store, built and operated solo", rsTitle: "SudoWear", rsSubtitle: "Shop koji sam sam napravio i vodim", year: "Live since 2025", sortOrder: 10 },
-  { category: "Projects", enTitle: "This Blog", enSubtitle: "Full stack / React + tRPC + Drizzle", rsTitle: "Ovaj blog", rsSubtitle: "Full stack / React + tRPC + Drizzle", year: "2026", sortOrder: 11 },
+  { category: "Projects", enTitle: "Beekio", enSubtitle: "AI beekeeping SaaS, waitlist open", rsTitle: "Beekio", rsSubtitle: "AI SaaS za pčelare, lista čekanja otvorena", year: "2026", sortOrder: 9 },
+  { category: "Projects", enTitle: "WPAS AI Assistant", enSubtitle: "AI assistant, built solo end to end", rsTitle: "WPAS AI asistent", rsSubtitle: "AI asistent, sam od početka do kraja", year: "2026", sortOrder: 10 },
+  { category: "Projects", enTitle: "SudoWear", enSubtitle: "Online store, built and operated solo", rsTitle: "SudoWear", rsSubtitle: "Shop koji sam sam napravio i vodim", year: "Live since 2025", sortOrder: 11 },
+  { category: "Projects", enTitle: "This Blog", enSubtitle: "Full stack / React + tRPC + Drizzle", rsTitle: "Ovaj blog", rsSubtitle: "Full stack / React + tRPC + Drizzle", year: "2026", sortOrder: 12 },
 ];
 
