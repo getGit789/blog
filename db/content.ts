@@ -56,7 +56,7 @@ SudoWear has been quiet for a few months, not dead, just paused while the rest o
 
 Running a store alone means every mistake is visible and every win is yours too. No committee, no meetings about meetings, just decisions and the results of those decisions showing up in the order count the next morning. That's the appeal and the exhausting part at the same time.
 
-If you want to see what a bunch of terminal jokes look like stitched onto actual clothing, the store is live at sudowear.com. New drops are coming. Consider this the quiet part before the relaunch.`;
+If you want to see what a bunch of terminal jokes look like stitched onto actual clothing, the store is live at sudowear.shop. New drops are coming. Consider this the quiet part before the relaunch.`;
 
 export const SUDOWEAR_DETAIL_RS = `Počelo je kao fora u grupnom čatu. Neko je rekao da developerima trebaju majice koje priznaju šta stvarno radimo ceo dan, i negde između tog komentara i sledećeg commita, SudoWear je prestao da bude fora i postao pravi shop sa pravim zalihama i pravim kupcima koji čekaju prave informacije o statusu pošiljke.
 
@@ -68,7 +68,7 @@ SudoWear je bio tih par meseci, nije mrtav, samo pauziran dok je ostatak života
 
 Vođenje prodavnice sam znači da je svaka greška vidljiva, a svaka pobeda takođe tvoja. Nema komiteta, nema sastanaka o sastancima, samo odluke i rezultati tih odluka koji se pojave u broju porudžbina sledećeg jutra. To je i draž i iscrpljujući deo, istovremeno.
 
-Ako želiš da vidiš kako gomila terminal fora izgleda odštampana na pravoj odeći, prodavnica radi na sudowear.com. Nove kolekcije dolaze. Smatraj ovo tihim delom pre ponovnog lansiranja.`;
+Ako želiš da vidiš kako gomila terminal fora izgleda odštampana na pravoj odeći, prodavnica radi na sudowear.shop. Nove kolekcije dolaze. Smatraj ovo tihim delom pre ponovnog lansiranja.`;
 
 export const FIVE_YEARS_SUPPORT_DETAIL_EN = `Nobody puts "answered tickets for five years" on a highlight reel. It doesn't sound like a career, it sounds like a waiting room. But those years are where I actually learned how systems fail, and nothing since has taught me faster.
 
