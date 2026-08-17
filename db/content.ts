@@ -188,9 +188,8 @@ export const DRAFT_RS = "Još pišem ovaj. Navrati uskoro.";
 export const seedPosts = [
   {
     year: "2026",
-    // No cover photo yet, so PostCover draws the generated Projects motif.
-    image: "",
-    detailImage: "",
+    image: "/images/covers/beekio.jpg",
+    detailImage: "/images/covers/beekio-detail.jpg",
     sortOrder: 1,
     enTitle: "Beekio, One Person",
     enSubtitle: "Running a beekeeping SaaS end to end, alone",
