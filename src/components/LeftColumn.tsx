@@ -1,7 +1,11 @@
-import ShaderCanvas from "./ShaderCanvas";
+import { lazy, Suspense } from "react";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { trpc } from "@/providers/trpc";
+
+// three.js is ~700 kB and only draws the decorative backdrop, so it loads
+// after first paint instead of blocking it.
+const ShaderCanvas = lazy(() => import("./ShaderCanvas"));
 
 interface LeftColumnProps {
   onContactClick: () => void;
@@ -44,7 +48,9 @@ export default function LeftColumn({ onContactClick }: LeftColumnProps) {
         position: "relative",
       }}
     >
-      <ShaderCanvas />
+      <Suspense fallback={null}>
+        <ShaderCanvas />
+      </Suspense>
 
       <div
         className="relative z-10 flex flex-col h-full p-6"

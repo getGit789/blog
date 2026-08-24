@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Routes, Route, Navigate } from "react-router";
 import LeftColumn from "./components/LeftColumn";
 import MiddleColumn from "./components/MiddleColumn";
@@ -12,13 +12,16 @@ import type { BlogPost } from "../contracts/blog";
 import { toBlogPost } from "../contracts/blog";
 import NotFound from "./pages/NotFound";
 import Guestbook from "./pages/Guestbook";
-import AdminLayout from "./pages/admin/AdminLayout";
-import AdminLogin from "./pages/admin/AdminLogin";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminSettings from "./pages/admin/AdminSettings";
-import AdminGuestbook from "./pages/admin/AdminGuestbook";
-import PostEditor from "./pages/admin/PostEditor";
 import { useIsMobile } from "./hooks/useIsMobile";
+
+// A visitor never loads the admin zone: it is one person's editor, so it is
+// split out of the bundle every public page has to download.
+const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const AdminGuestbook = lazy(() => import("./pages/admin/AdminGuestbook"));
+const PostEditor = lazy(() => import("./pages/admin/PostEditor"));
 
 /**
  * Public header controls. Language and theme only: the admin zone is reachable
@@ -119,6 +122,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <LanguageProvider>
+        <Suspense fallback={null}>
         <Routes>
           {/* Public blog. Nothing under here renders an auth control. */}
           <Route path="/" element={<HomePage />} />
@@ -140,6 +144,7 @@ export default function App() {
 
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </Suspense>
       </LanguageProvider>
     </ThemeProvider>
   );

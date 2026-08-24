@@ -182,9 +182,6 @@ Na kontakt stranici piše da je Beekio mali tim i da svaku poruku pročita neko 
 
 Ako držiš pčele, ili znaš nekog ko drži, tu je na beekio.com. Lista čekanja je otvorena.`;
 
-export const DRAFT_EN = "Draft in progress. I'm still writing this one, check back soon.";
-export const DRAFT_RS = "Još pišem ovaj. Navrati uskoro.";
-
 export const seedPosts = [
   {
     year: "2026",

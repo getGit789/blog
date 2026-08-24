@@ -1,21 +1,16 @@
 # What is left on this blog
 
-Snapshot as of 2026-08-02. Ordered by what blocks a real launch first.
+Snapshot as of 2026-08-24 (verified against the live site and the production database). Ordered by what blocks a real launch first.
 
 ## Content
 
-- [ ] **Five posts are still one line drafts.** Only *Self Hosted Lab v2* has a
-      full article, everything else has a summary and a placeholder body
-      ("Draft in progress"):
-      - WPAS AI Assistant
-      - Building SudoWear
-      - Five Years in Support
-      - Running Linux on Everything
-      - Poker and the Mental Game
-
-      Send notes per post (what actually happened, what broke, specifics) and
-      they can be written in both languages to match the tone of the finished
-      post. See `db/content.ts` for where the text lives.
+- [x] **All seven posts are written**, both languages, full articles. Verified
+      2026-08-24 against `blog.damirkranjcevic.com/api/trpc/blog.list`: seven
+      rows, every `enDetailContent` and `rsDetailContent` between 1.6k and 3.8k
+      characters, none containing the draft placeholder.
+- [ ] **`DRAFT_EN` / `DRAFT_RS` in `db/content.ts` are now unused.** Leftovers
+      from when five posts were stubs. Delete them, or keep them as the
+      placeholder for the next post that starts as a stub.
 
 ## Before this goes on the public internet
 
@@ -85,21 +80,20 @@ redeploys automatically.
       broken, but worth revisiting with route level code splitting
       (`build.rollupOptions.output.manualChunks` or dynamic `import()`) if
       load time on a slow connection matters.
-- [ ] **Five of the six generated post covers lean dark and moody**; only the
-      SudoWear packing table cover is bright. Coherent as a set, but flag it
-      if the feed should read lighter overall. Regenerating any of them is a
-      small, cheap job (Higgsfield `soul_location`, about 0.12 credits each).
+- [ ] **Most post covers lean dark and moody**; only the SudoWear packing
+      table cover is bright. Coherent as a set, but flag it if the feed should
+      read lighter overall. Seven covers now, each a JPEG plus a WebP, Beekio
+      included. Regenerating any of them is a small, cheap job (Higgsfield
+      `soul_location`, about 0.12 credits each).
 - [ ] **`local.db.bak`** sits at the project root from before the `zh` to `rs`
       column rename. Safe to delete once you've confirmed the live `local.db`
       looks right; it is only a safety net.
 
 ## Not broken, just worth knowing
 
-- The avatar (`/uploads/1785669300605-gbp09q.jpeg`) and the static fallback
-  (`public/images/portrait.jpg`, still a stock photo of a woman) are two
-  different things. The live site uses the uploaded photo; the static file is
-  only shown if `siteSettings.avatarImage` is ever cleared. No action needed
-  unless that fallback should also be swapped for a real photo.
+- The stock `public/images/portrait.jpg` fallback is gone, and nothing in
+  `src/` references it any more. `public/images/profile.jpeg` is the real
+  photo now.
 - The English fallback text hardcoded in `LeftColumn.tsx` and
   `RightColumn.tsx` (shown only if the database bio or CV table is ever
   empty) is a safety net, not what's rendering today. No need to touch it
