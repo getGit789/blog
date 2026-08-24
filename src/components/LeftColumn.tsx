@@ -95,6 +95,22 @@ export default function LeftColumn({ onContactClick }: LeftColumnProps) {
             >
               Instagram
             </a>
+            <a
+              href="https://x.com/damirroot"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "12px",
+                color: "#FFFFFF",
+                textDecoration: "underline",
+                textUnderlineOffset: "4px",
+                display: "block",
+                lineHeight: 1.8,
+              }}
+            >
+              X
+            </a>
           </div>
         </div>
 
