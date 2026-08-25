@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { Link } from "react-router";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -18,7 +18,6 @@ interface MiddleColumnProps {
 export default function MiddleColumn({ posts }: MiddleColumnProps) {
   const columnRef = useRef<HTMLDivElement>(null);
   const [hoveredImage, setHoveredImage] = useState<number | null>(null);
-  const navigate = useNavigate();
   const { language } = useLanguage();
   const isMobile = useIsMobile();
 
@@ -80,8 +79,12 @@ export default function MiddleColumn({ posts }: MiddleColumnProps) {
                 paddingBottom: "40px",
               }}
             >
-              <div
-                onClick={() => navigate(`/post/${post.id}`)}
+              {/* A real anchor, not a click handler: this is what makes each
+                  post a crawlable internal link, and what lets a reader
+                  middle-click or tab to it. */}
+              <Link
+                to={`/post/${post.id}`}
+                style={{ display: "block", color: "inherit", textDecoration: "none" }}
                 onMouseEnter={() => setHoveredImage(post.id)}
                 onMouseLeave={() => setHoveredImage(null)}
               >
@@ -158,7 +161,7 @@ export default function MiddleColumn({ posts }: MiddleColumnProps) {
                 >
                   {content.content}
                 </p>
-              </div>
+              </Link>
             </article>
           );
         })}

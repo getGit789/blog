@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router";
+import { Link, useParams, useNavigate } from "react-router";
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -108,9 +108,11 @@ export default function PostDetail({ posts }: PostDetailProps) {
         </div>
 
         <div style={{ borderTop: "1px solid var(--border-light)", marginTop: "64px", paddingTop: "28px" }}>
-          <button onClick={() => navigate("/")} style={{ fontSize: "12px", color: "var(--text-charcoal)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "3px" }}>
+          {/* Anchor, not a button: an article with no crawlable outgoing link
+              reads as a dead end to a search engine. */}
+          <Link to="/" style={{ fontSize: "12px", color: "var(--text-charcoal)", textDecoration: "underline", textUnderlineOffset: "3px" }}>
             {backAllText}
-          </button>
+          </Link>
         </div>
       </div>
     </div>
