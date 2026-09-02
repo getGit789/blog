@@ -111,6 +111,8 @@ describe("prerender", () => {
     const bySlug = render("/post/proxmox-home-lab-self-hosting", mapped)!;
     expect(bySlug).toContain("<h1>Self Hosted Lab v2</h1>");
     expect(bySlug).toContain(canonical);
+    // A mapped title also gets its hand-written search snippet, not the subtitle.
+    expect(bySlug).toContain('content="Rebuilding my home lab on Proxmox');
 
     // The old numeric URL still renders (the edge 301s it in production) and
     // never advertises itself: canonical and links point at the slug.

@@ -20,6 +20,27 @@ const GUESTBOOK_DESC =
 const HANDLE = "@damirroot";
 const FALLBACK_IMAGE = "/images/covers/beekio.jpg";
 
+// Search-snippet descriptions, keyed on enTitle like contracts/slugs.ts.
+// The subtitles shown on the page are too short to work as snippets; these
+// summarize each article in the length search engines actually display.
+// A post without an entry falls back to its subtitle.
+const DESCRIPTION_BY_TITLE: Record<string, string> = {
+  "Self Hosted Lab v2":
+    "Rebuilding my home lab on Proxmox with a used mini PC: Vaultwarden, Nextcloud, Gitea, tested backups, VLAN segmentation, and what version one got wrong.",
+  "WPAS AI Assistant":
+    "The architecture of a local AI support assistant: intent classification, specialist agents, two-stage PII redaction, and human review on every draft.",
+  "Building SudoWear":
+    "Running a developer T-shirt store solo: the storefront took a weekend, then came customs delays, fulfillment checks, late-night support and marketing.",
+  "Five Years in Support":
+    "Five years of IT support at AT&T and a live betting platform taught me how systems really fail, and shaped every system I have built since.",
+  "Running Linux on Everything":
+    "My daily Fedora 43 setup on a ThinkPad T14 Gen 2 with KDE Plasma: terminal tools, the Albert launcher, a Wayland shortcut fix, and what still needs Windows.",
+  "Poker and the Mental Game":
+    "What tournament poker taught me about engineering: expected value, process over outcomes, tilt during incidents, and bankroll thinking as risk management.",
+  "Beekio, One Person":
+    "Building Beekio alone: an AI assistant that turns hive inspections into a 24 to 48 hour action plan for beekeepers, and everything that broke on the way.",
+};
+
 export type Route =
   | { kind: "home" }
   | { kind: "guestbook" }
@@ -119,7 +140,7 @@ function build(route: Route, posts: Post[]): Page | null {
 
   return {
     title: `${post.enTitle} — ${SITE}`,
-    description: clamp(post.enSubtitle || post.enContent),
+    description: DESCRIPTION_BY_TITLE[post.enTitle] ?? clamp(post.enSubtitle || post.enContent),
     path: postPath(post),
     image: post.detailImage || post.image,
     type: "article",
