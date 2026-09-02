@@ -70,9 +70,16 @@ export default function PostDetail({ posts }: PostDetailProps) {
       </header>
 
       <div ref={contentRef} className="mx-auto" style={{ maxWidth: "720px", padding: "96px 24px 96px" }}>
+        {/* A real photo renders at its natural aspect ratio (the poker trophy
+            is square; the rest are pre-cropped 16:10 so nothing shifts). Only
+            the generated-art fallback needs the fixed frame. */}
         <div
           className="overflow-hidden"
-          style={{ border: "1px solid var(--border-light)", marginBottom: "48px", aspectRatio: "16 / 10" }}
+          style={{
+            border: "1px solid var(--border-light)",
+            marginBottom: "48px",
+            ...(hasRealImage(post.detailImage) ? {} : { aspectRatio: "16 / 10" }),
+          }}
         >
           {hasRealImage(post.detailImage) ? (
             <CoverImage src={post.detailImage} alt={content.title} eager />
