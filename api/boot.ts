@@ -124,7 +124,8 @@ app.get("/sitemap.xml", async (c) => {
   const iso = (d: Date | null) => (d ?? new Date()).toISOString().slice(0, 10);
   const urls = [
     `<url><loc>${origin}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>`,
-    `<url><loc>${origin}/guestbook</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>`,
+    // The guestbook is noindexed while it has no public entries (see
+    // prerender.ts), so it stays out of the sitemap too.
     ...(await findAllPosts()).map(
       (p) =>
         `<url><loc>${origin}${postPath(p)}</loc><lastmod>${iso(p.updatedAt)}</lastmod><priority>0.8</priority></url>`,

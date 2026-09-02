@@ -124,6 +124,12 @@ describe("prerender", () => {
     expect(home).not.toContain('href="/post/1"');
   });
 
+  it("noindexes only the guestbook", () => {
+    expect(render("/guestbook")!).toContain('<meta name="robots" content="noindex, follow" />');
+    expect(render("/")!).not.toContain('name="robots"');
+    expect(render("/post/1")!).not.toContain('name="robots"');
+  });
+
   it("ships BlogPosting structured data on a post but not on home", () => {
     const one = render("/post/1")!;
     const ld = /<script type="application\/ld\+json">(.*?)<\/script>/.exec(one);

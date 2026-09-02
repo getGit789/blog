@@ -95,6 +95,8 @@ type Page = {
   body: string;
   /** Set on article pages; feeds the BlogPosting structured data. */
   post?: Post;
+  /** Robots directive; only set where the default (index) is wrong. */
+  robots?: string;
 };
 
 function build(route: Route, posts: Post[]): Page | null {
@@ -127,6 +129,9 @@ function build(route: Route, posts: Post[]): Page | null {
       path: "/guestbook",
       image: posts[0]?.image || FALLBACK_IMAGE,
       type: "website",
+      // Empty guestbook: thin page, kept out of the index until it has
+      // entries worth reading. "follow" keeps its article links crawlable.
+      robots: "noindex, follow",
       body:
         `<p><a href="/">${esc(SITE)}</a></p>` +
         `<h1>Guestbook</h1><p>${esc(GUESTBOOK_DESC)}</p>` +
@@ -184,6 +189,7 @@ export function prerender(
   const image = origin + page.image;
   const head = [
     `<title>${esc(page.title)}</title>`,
+    ...(page.robots ? [`<meta name="robots" content="${esc(page.robots)}" />`] : []),
     `<meta name="description" content="${esc(page.description)}" />`,
     `<link rel="canonical" href="${esc(url)}" />`,
     `<meta property="og:type" content="${page.type}" />`,
