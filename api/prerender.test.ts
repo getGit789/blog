@@ -47,10 +47,13 @@ describe("matchRoute", () => {
   it("matches the three public routes and nothing else", () => {
     expect(matchRoute("/")).toEqual({ kind: "home" });
     expect(matchRoute("/guestbook")).toEqual({ kind: "guestbook" });
-    expect(matchRoute("/post/12")).toEqual({ kind: "post", id: 12 });
+    expect(matchRoute("/post/12")).toEqual({ kind: "post", ref: "12" });
+    expect(matchRoute("/post/proxmox-home-lab-self-hosting")).toEqual({
+      kind: "post",
+      ref: "proxmox-home-lab-self-hosting",
+    });
     expect(matchRoute("/admin")).toBeNull();
     expect(matchRoute("/admin/settings")).toBeNull();
-    expect(matchRoute("/post/abc")).toBeNull();
     expect(matchRoute("/nope")).toBeNull();
   });
 });
@@ -96,8 +99,27 @@ describe("prerender", () => {
     expect(one).not.toContain('href="/post/1"'); // no self link
   });
 
-  it("returns null for a post id that does not exist", () => {
+  it("returns null for a post that does not exist", () => {
     expect(render("/post/999")).toBeNull();
+    expect(render("/post/no-such-slug")).toBeNull();
+  });
+
+  it("serves a mapped post by slug and by legacy id, canonical on the slug", () => {
+    const mapped = [post(1, { enTitle: "Self Hosted Lab v2" }), post(2)];
+    const canonical = `<link rel="canonical" href="${ORIGIN}/post/proxmox-home-lab-self-hosting" />`;
+
+    const bySlug = render("/post/proxmox-home-lab-self-hosting", mapped)!;
+    expect(bySlug).toContain("<h1>Self Hosted Lab v2</h1>");
+    expect(bySlug).toContain(canonical);
+
+    // The old numeric URL still renders (the edge 301s it in production) and
+    // never advertises itself: canonical and links point at the slug.
+    const byId = render("/post/1", mapped)!;
+    expect(byId).toContain(canonical);
+
+    const home = render("/", mapped)!;
+    expect(home).toContain('href="/post/proxmox-home-lab-self-hosting"');
+    expect(home).not.toContain('href="/post/1"');
   });
 
   it("escapes html and does not expand $ patterns from post text", () => {

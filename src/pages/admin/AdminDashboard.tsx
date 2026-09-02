@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router";
 import { trpc } from "@/providers/trpc";
+import { postPath } from "@contracts/slugs";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const copy = {
@@ -116,7 +117,7 @@ export default function AdminDashboard() {
 
                   <div className="flex items-center gap-3" style={{ flexShrink: 0, paddingTop: "4px" }}>
                     <button
-                      onClick={() => navigate(`/post/${post.id}`)}
+                      onClick={() => navigate(postPath(post))}
                       style={{ ...actionStyle, color: "var(--text-grey)" }}
                     >
                       {t.view}

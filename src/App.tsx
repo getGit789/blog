@@ -126,7 +126,7 @@ export default function App() {
         <Routes>
           {/* Public blog. Nothing under here renders an auth control. */}
           <Route path="/" element={<HomePage />} />
-          <Route path="/post/:id" element={<PostPage />} />
+          <Route path="/post/:slug" element={<PostPage />} />
           <Route path="/guestbook" element={<Guestbook />} />
 
           {/* Admin zone. Unguarded login, everything else behind AdminLayout. */}

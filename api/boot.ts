@@ -8,6 +8,7 @@ import { env } from "./lib/env";
 import { writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { findAllPosts } from "./queries/posts";
+import { postPath } from "../contracts/slugs";
 
 /**
  * This app runs in two runtimes: the local/production Node server (started
@@ -126,7 +127,7 @@ app.get("/sitemap.xml", async (c) => {
     `<url><loc>${origin}/guestbook</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>`,
     ...(await findAllPosts()).map(
       (p) =>
-        `<url><loc>${origin}/post/${p.id}</loc><lastmod>${iso(p.updatedAt)}</lastmod><priority>0.8</priority></url>`,
+        `<url><loc>${origin}${postPath(p)}</loc><lastmod>${iso(p.updatedAt)}</lastmod><priority>0.8</priority></url>`,
     ),
   ];
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>`;

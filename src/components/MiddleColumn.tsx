@@ -83,7 +83,7 @@ export default function MiddleColumn({ posts }: MiddleColumnProps) {
                   post a crawlable internal link, and what lets a reader
                   middle-click or tab to it. */}
               <Link
-                to={`/post/${post.id}`}
+                to={`/post/${post.slug}`}
                 style={{ display: "block", color: "inherit", textDecoration: "none" }}
                 onMouseEnter={() => setHoveredImage(post.id)}
                 onMouseLeave={() => setHoveredImage(null)}

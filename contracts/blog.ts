@@ -1,4 +1,5 @@
 import type { Post } from "@db/schema";
+import { postSlug } from "./slugs";
 
 // Frontend-facing BlogPost shape — compatible with existing UI components
 export interface PostContent {
@@ -11,6 +12,8 @@ export interface PostContent {
 
 export interface BlogPost {
   id: number;
+  /** URL segment for /post/<slug>; falls back to the numeric id. */
+  slug: string;
   year: string;
   image: string;
   /** Article header photo. Falls back to `image` when a post has only one. */
@@ -25,6 +28,7 @@ export interface BlogPost {
 export function toBlogPost(post: Post): BlogPost {
   return {
     id: post.id,
+    slug: postSlug(post),
     year: post.year,
     image: post.image,
     detailImage: post.detailImage || post.image,

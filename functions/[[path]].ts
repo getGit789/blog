@@ -1,6 +1,7 @@
 import { handle } from "hono/cloudflare-pages";
 import app from "../api/boot";
 import { matchRoute, prerender } from "../api/prerender";
+import { postPath, findPostByRef } from "../contracts/slugs";
 import { findAllPosts } from "../api/queries/posts";
 
 /**
@@ -34,12 +35,17 @@ app.get("*", async (c) => {
   // A database blip must never take the site down: on any failure the plain
   // shell still goes out and the SPA renders exactly as it did before.
   try {
-    const html = prerender(
-      await shellRes.clone().text(),
-      route,
-      url.origin,
-      await findAllPosts(),
-    );
+    const posts = await findAllPosts();
+    // A legacy /post/<id> URL (or a trailing-slash variant) is permanently
+    // redirected to the post's canonical slug URL, so old links and search
+    // results carry over instead of splitting into duplicate pages.
+    if (route.kind === "post") {
+      const post = findPostByRef(posts, route.ref);
+      if (post && url.pathname !== postPath(post)) {
+        return c.redirect(postPath(post) + url.search, 301);
+      }
+    }
+    const html = prerender(await shellRes.clone().text(), route, url.origin, posts);
     if (!html) return shellRes;
     const headers = new Headers(shellRes.headers);
     headers.delete("content-length");

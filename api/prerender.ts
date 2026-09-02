@@ -1,4 +1,5 @@
 import type { Post } from "@db/schema";
+import { postPath, findPostByRef } from "../contracts/slugs";
 
 /**
  * The site is a client-rendered SPA, so every URL used to return the same empty
@@ -22,17 +23,18 @@ const FALLBACK_IMAGE = "/images/covers/beekio.jpg";
 export type Route =
   | { kind: "home" }
   | { kind: "guestbook" }
-  | { kind: "post"; id: number };
+  | { kind: "post"; ref: string };
 
 /**
  * Cheap path test, kept separate from prerender() so a request for /admin or an
  * unknown URL never pays for the database round trip that posts require.
+ * A post ref is a slug or a legacy numeric id; findPostByRef resolves it.
  */
 export function matchRoute(pathname: string): Route | null {
   if (pathname === "/" || pathname === "") return { kind: "home" };
   if (pathname === "/guestbook" || pathname === "/guestbook/") return { kind: "guestbook" };
-  const post = /^\/post\/(\d+)\/?$/.exec(pathname);
-  if (post) return { kind: "post", id: Number(post[1]) };
+  const post = /^\/post\/([\w-]+)\/?$/.exec(pathname);
+  if (post) return { kind: "post", ref: post[1] };
   return null;
 }
 
@@ -61,7 +63,7 @@ const paras = (text: string) =>
     .join("");
 
 const postItem = (p: Post) =>
-  `<li><a href="/post/${p.id}">${esc(p.enTitle)}</a> — ${esc(clamp(p.enSubtitle, 120))}</li>`;
+  `<li><a href="${postPath(p)}">${esc(p.enTitle)}</a> — ${esc(clamp(p.enSubtitle, 120))}</li>`;
 
 type Page = {
   title: string;
@@ -86,7 +88,7 @@ function build(route: Route, posts: Post[]): Page | null {
         posts
           .map(
             (p) =>
-              `<article><h3><a href="/post/${p.id}">${esc(p.enTitle)}</a></h3>` +
+              `<article><h3><a href="${postPath(p)}">${esc(p.enTitle)}</a></h3>` +
               `<p>${esc(p.enCollection)} / ${esc(p.year)}</p>` +
               `<p>${esc(p.enSubtitle)}</p><p>${esc(clamp(p.enContent, 400))}</p></article>`,
           )
@@ -109,14 +111,14 @@ function build(route: Route, posts: Post[]): Page | null {
     };
   }
 
-  const post = posts.find((p) => p.id === route.id);
+  const post = findPostByRef(posts, route.ref);
   if (!post) return null;
   const others = posts.filter((p) => p.id !== post.id);
 
   return {
     title: `${post.enTitle} — ${SITE}`,
     description: clamp(post.enSubtitle || post.enContent),
-    path: `/post/${post.id}`,
+    path: postPath(post),
     image: post.detailImage || post.image,
     type: "article",
     body:

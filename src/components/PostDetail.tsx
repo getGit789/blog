@@ -17,12 +17,13 @@ interface PostDetailProps {
  * that no admin control renders on a public route, logged in or not.
  */
 export default function PostDetail({ posts }: PostDetailProps) {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const contentRef = useRef<HTMLDivElement>(null);
   const { language } = useLanguage();
 
-  const post = posts.find((p) => p.id === Number(id));
+  // Slug is canonical; the numeric id still resolves so old links keep working.
+  const post = posts.find((p) => p.slug === slug || String(p.id) === slug);
 
   useEffect(() => {
     if (contentRef.current) {
@@ -32,7 +33,7 @@ export default function PostDetail({ posts }: PostDetailProps) {
         { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
       );
     }
-  }, [id]);
+  }, [slug]);
 
   const backText = language === "rs" ? "Nazad na po\u010detnu" : "Back to home";
   const notFoundText = language === "rs" ? "Tekst ne postoji" : "Article not found";
