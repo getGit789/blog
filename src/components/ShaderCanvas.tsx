@@ -199,15 +199,27 @@ export default function ShaderCanvas({ fadeStart = 0.75 }: ShaderCanvasProps) {
 
     const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
 
+    // The fragment shader is ~60 noise evaluations per pixel per frame. Fine
+    // on a desktop GPU, but on phones a continuous loop at devicePixelRatio 2
+    // pins the GPU hard enough that browsers raise the "page unresponsive"
+    // dialog. Phones get a single static frame at 1x instead; so does anyone
+    // asking for reduced motion. 900px matches useIsMobile's breakpoint.
+    const staticFrame =
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+      window.matchMedia('(pointer: coarse)').matches ||
+      window.innerWidth <= 900;
+    const maxDpr = staticFrame ? 1 : 2;
+    const dpr = () => Math.min(window.devicePixelRatio, maxDpr);
+
     const w = container.clientWidth;
     const h = container.clientHeight;
     renderer.setSize(w, h);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(dpr());
     container.appendChild(renderer.domElement);
 
     const uniforms: Record<string, THREE.IUniform> = {
       u_time: { value: 0 },
-      u_res: { value: new THREE.Vector2(w * Math.min(window.devicePixelRatio, 2), h * Math.min(window.devicePixelRatio, 2)) },
+      u_res: { value: new THREE.Vector2(w * dpr(), h * dpr()) },
       u_scale: { value: 2.5 },
       u_speed: { value: 0.05 },
       u_warp: { value: 0.45 },
@@ -227,29 +239,34 @@ export default function ShaderCanvas({ fadeStart = 0.75 }: ShaderCanvasProps) {
     const mesh = new THREE.Mesh(geometry, material);
     scene.add(mesh);
 
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
     const animate = () => {
       uniforms.u_time.value = (Date.now() - startTimeRef.current) * 0.001;
       renderer.render(scene, camera);
       frameRef.current = requestAnimationFrame(animate);
     };
 
-    if (prefersReducedMotion) {
+    if (staticFrame) {
       // Draw one static frame rather than animating.
       renderer.render(scene, camera);
     } else {
       animate();
     }
 
+    // A background tab keeps its rAF throttled but not free; stop outright.
+    const onVisibility = () => {
+      if (staticFrame) return;
+      cancelAnimationFrame(frameRef.current);
+      if (!document.hidden) animate();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
     const resize = () => {
       const nw = container.clientWidth;
       const nh = container.clientHeight;
       if (nw === 0 || nh === 0) return;
       renderer.setSize(nw, nh);
-      const dpr = Math.min(window.devicePixelRatio, 2);
-      uniforms.u_res.value.set(nw * dpr, nh * dpr);
-      if (prefersReducedMotion) renderer.render(scene, camera);
+      uniforms.u_res.value.set(nw * dpr(), nh * dpr());
+      if (staticFrame) renderer.render(scene, camera);
     };
 
     // The column grows after mount: the bio and CV load in, and on mobile the
@@ -262,6 +279,7 @@ export default function ShaderCanvas({ fadeStart = 0.75 }: ShaderCanvasProps) {
 
     return () => {
       observer.disconnect();
+      document.removeEventListener('visibilitychange', onVisibility);
       window.removeEventListener('resize', resize);
       cancelAnimationFrame(frameRef.current);
       renderer.dispose();

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Damir Kranjčević tech blog">
+
+  <rect width="64" height="64" fill="#F4F1EC"/>
+  <text x="31" y="46" text-anchor="middle" font-family="Space Mono,Consolas,monospace" font-size="48" font-weight="700" fill="#1A1A1A">@</text>
+  <rect x="51" y="8" width="6" height="6" fill="#2D6A65"/>
+</svg>

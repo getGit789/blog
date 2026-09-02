@@ -307,7 +307,7 @@ export const seedPosts = [
   },
   {
     year: "2026",
-    image: "/images/covers/self-hosted-lab.jpg",
+    image: "/images/covers/self-hosted-lab-v3.webp",
     detailImage: "/images/covers/self-hosted-lab-detail.jpg",
     sortOrder: 2,
     enTitle: "Self Hosted Lab v2",
@@ -343,7 +343,7 @@ export const seedPosts = [
   },
   {
     year: "2026",
-    image: "/images/covers/sudowear.jpg",
+    image: "/images/covers/sudowear-v3.webp",
     detailImage: "/images/covers/sudowear-detail.jpg",
     sortOrder: 4,
     enTitle: "Building SudoWear",
@@ -361,7 +361,7 @@ export const seedPosts = [
   },
   {
     year: "2025",
-    image: "/images/covers/five-years-support.jpg",
+    image: "/images/covers/five-years-support-v2.webp",
     detailImage: "/images/covers/five-years-support-detail.jpg",
     sortOrder: 5,
     enTitle: "Five Years in Support",
@@ -397,8 +397,8 @@ export const seedPosts = [
   },
   {
     year: "2024",
-    image: "/images/covers/poker-mental-game.jpg",
-    detailImage: "/images/covers/poker-mental-game-detail.jpg",
+    image: "/images/covers/poker-mental-game-v3.webp",
+    detailImage: "/images/covers/damir-poker-trophy.webp",
     sortOrder: 7,
     enTitle: "Poker and the Mental Game",
     enSubtitle: "Expected Value, Tilt, and Thinking in Bets",

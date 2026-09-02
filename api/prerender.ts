@@ -1,5 +1,6 @@
 import type { Post } from "@db/schema";
 import { postPath, findPostByRef } from "../contracts/slugs";
+import { coverImage, coverDetailImage } from "../contracts/covers";
 
 /**
  * The site is a client-rendered SPA, so every URL used to return the same empty
@@ -18,7 +19,8 @@ const HOME_DESC =
 const GUESTBOOK_DESC =
   "Leave a note. The guestbook on Damir Kranjčević's tech blog, for anyone passing through.";
 const HANDLE = "@damirroot";
-const FALLBACK_IMAGE = "/images/covers/beekio.jpg";
+// 1200x630, made for social cards; home and guestbook share it.
+const SITE_OG_IMAGE = "/og-image.jpg";
 
 // Search-snippet descriptions, keyed on enTitle like contracts/slugs.ts.
 // The subtitles shown on the page are too short to work as snippets; these
@@ -107,7 +109,7 @@ function build(route: Route, posts: Post[]): Page | null {
       title: HOME_TITLE,
       description: HOME_DESC,
       path: "/",
-      image: posts[0]?.image || FALLBACK_IMAGE,
+      image: SITE_OG_IMAGE,
       type: "website",
       body:
         `<h1>${esc(HOME_TITLE)}</h1><p>${esc(HOME_DESC)}</p>` +
@@ -129,7 +131,7 @@ function build(route: Route, posts: Post[]): Page | null {
       title: `Guestbook — ${SITE}`,
       description: GUESTBOOK_DESC,
       path: "/guestbook",
-      image: posts[0]?.image || FALLBACK_IMAGE,
+      image: SITE_OG_IMAGE,
       type: "website",
       // Empty guestbook: thin page, kept out of the index until it has
       // entries worth reading. "follow" keeps its article links crawlable.
@@ -149,7 +151,7 @@ function build(route: Route, posts: Post[]): Page | null {
     title: `${post.enTitle} — ${SITE}`,
     description: DESCRIPTION_BY_TITLE[post.enTitle] ?? clamp(post.enSubtitle || post.enContent),
     path: postPath(post),
-    image: post.detailImage || post.image,
+    image: coverDetailImage(post),
     type: "article",
     post,
     body:
