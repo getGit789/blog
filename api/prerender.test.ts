@@ -122,6 +122,21 @@ describe("prerender", () => {
     expect(home).not.toContain('href="/post/1"');
   });
 
+  it("ships BlogPosting structured data on a post but not on home", () => {
+    const one = render("/post/1")!;
+    const ld = /<script type="application\/ld\+json">(.*?)<\/script>/.exec(one);
+    expect(ld).not.toBeNull();
+    const data = JSON.parse(ld![1]);
+    expect(data["@type"]).toBe("BlogPosting");
+    expect(data.headline).toBe("Post 1");
+    expect(data.author.name).toBe("Damir Kranjčević");
+    expect(data.datePublished).toBe(new Date(0).toISOString());
+    expect(data.image).toBe(`${ORIGIN}/images/covers/p1.jpg`);
+    expect(data.mainEntityOfPage).toBe(`${ORIGIN}/post/1`);
+
+    expect(render("/")!).not.toContain("ld+json");
+  });
+
   it("escapes html and does not expand $ patterns from post text", () => {
     const nasty = post(1, {
       enTitle: "Cost: $5 & <script>",

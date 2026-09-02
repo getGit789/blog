@@ -72,6 +72,8 @@ type Page = {
   image: string;
   type: "website" | "article";
   body: string;
+  /** Set on article pages; feeds the BlogPosting structured data. */
+  post?: Post;
 };
 
 function build(route: Route, posts: Post[]): Page | null {
@@ -121,6 +123,7 @@ function build(route: Route, posts: Post[]): Page | null {
     path: postPath(post),
     image: post.detailImage || post.image,
     type: "article",
+    post,
     body:
       `<p><a href="/">${esc(SITE)}</a></p>` +
       `<p>${esc(post.enCollection)} / ${esc(post.year)}</p>` +
@@ -175,7 +178,31 @@ export function prerender(
     `<meta name="twitter:title" content="${esc(page.title)}" />`,
     `<meta name="twitter:description" content="${esc(page.description)}" />`,
     `<meta name="twitter:image" content="${esc(image)}" />`,
-  ].join("\n    ");
+  ];
+
+  // BlogPosting structured data on articles, so search engines get the
+  // headline, author and dates as typed fields rather than scraped guesses.
+  if (page.post) {
+    const ld = {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      headline: page.post.enTitle,
+      description: page.description,
+      image,
+      url,
+      mainEntityOfPage: url,
+      datePublished: page.post.createdAt.toISOString(),
+      dateModified: page.post.updatedAt.toISOString(),
+      inLanguage: "en",
+      author: { "@type": "Person", name: "Damir Kranjčević", url: origin + "/" },
+    };
+    // \u003c keeps any "</script>" in post fields from closing the tag early.
+    head.push(
+      `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>`,
+    );
+  }
+
+  const headHtml = head.join("\n    ");
 
   // Function replacers throughout: post text may contain "$&" or "$1", which a
   // string replacement would expand.
@@ -183,7 +210,7 @@ export function prerender(
     .replace(/<title>[\s\S]*?<\/title>\s*/, "")
     .replace(/<meta\s+name="description"[^>]*>\s*/, "")
     .replace(/<meta\s+property="og:[^>]*>\s*/g, "")
-    .replace("</head>", () => `${head}\n  </head>`)
+    .replace("</head>", () => `${headHtml}\n  </head>`)
     .replace(
       /<div id="root"><\/div>/,
       () => `<div id="root">${STYLE}<div class="pre">${page.body}</div></div>`,
