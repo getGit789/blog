@@ -145,6 +145,16 @@ describe("prerender", () => {
     expect(render("/")!).not.toContain("ld+json");
   });
 
+  it("renders '## ' blocks in post text as h2 sections", () => {
+    const sectioned = post(1, {
+      enDetailContent: "Intro paragraph.\n\n## The first section\n\nSection body.",
+    });
+    const out = render("/post/1", [sectioned])!;
+    expect(out).toContain("<h2>The first section</h2>");
+    expect(out).toContain("<p>Section body.</p>");
+    expect(out).not.toContain("<p>## The first section</p>");
+  });
+
   it("escapes html and does not expand $ patterns from post text", () => {
     const nasty = post(1, {
       enTitle: "Cost: $5 & <script>",

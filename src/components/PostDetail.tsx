@@ -97,15 +97,21 @@ export default function PostDetail({ posts }: PostDetailProps) {
         <div style={{ borderTop: "1px solid var(--border-light)", marginBottom: "40px" }} />
 
         <div>
-          {paragraphs.map((para, idx) => (
-            <p
-              key={idx}
-              className="prose-serif"
-              style={{ color: "var(--text-charcoal)", whiteSpace: "pre-line" }}
-            >
-              {linkify(para)}
-            </p>
-          ))}
+          {paragraphs.map((para, idx) =>
+            para.startsWith("## ") ? (
+              <h2 key={idx} className="prose-h2" style={{ color: "var(--text-charcoal)" }}>
+                {para.slice(3)}
+              </h2>
+            ) : (
+              <p
+                key={idx}
+                className="prose-serif"
+                style={{ color: "var(--text-charcoal)", whiteSpace: "pre-line" }}
+              >
+                {linkify(para)}
+              </p>
+            ),
+          )}
         </div>
 
         <div style={{ borderTop: "1px solid var(--border-light)", marginTop: "64px", paddingTop: "28px" }}>

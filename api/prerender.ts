@@ -75,12 +75,14 @@ function clamp(s: string, max = 155) {
   return (space > 40 ? cut.slice(0, space) : cut).replace(/[,;:.\s]+$/, "") + "…";
 }
 
+// A block starting with "## " is a section heading, same convention the
+// React article view renders (see PostDetail.tsx).
 const paras = (text: string) =>
   text
     .split("\n\n")
     .map((p) => p.trim())
     .filter(Boolean)
-    .map((p) => `<p>${esc(p)}</p>`)
+    .map((p) => (p.startsWith("## ") ? `<h2>${esc(p.slice(3))}</h2>` : `<p>${esc(p)}</p>`))
     .join("");
 
 const postItem = (p: Post) =>
