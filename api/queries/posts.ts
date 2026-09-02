@@ -2,26 +2,12 @@ import { eq, asc } from "drizzle-orm";
 import { getDb } from "./connection";
 import { posts } from "@db/schema";
 import type { InsertPost } from "@db/schema";
-import { seedPosts } from "@db/content";
-
-// db/content.ts is the source of truth for the seeded articles; sync-content
-// pushes it into the DB, and a later sync overwrites admin edits to those rows
-// either way. This working copy holds no production DB credentials, so the
-// newest body text is overlaid at read time until a sync lands.
-// ponytail: delete the overlay once sync-content --apply reaches production.
-const seedByTitle = new Map(seedPosts.map((p) => [p.enTitle, p]));
 
 export async function findAllPosts() {
-  const rows = await getDb()
+  return getDb()
     .select()
     .from(posts)
     .orderBy(asc(posts.sortOrder));
-  return rows.map((row) => {
-    const seed = seedByTitle.get(row.enTitle);
-    return seed
-      ? { ...row, enDetailContent: seed.enDetailContent, rsDetailContent: seed.rsDetailContent }
-      : row;
-  });
 }
 
 export async function findPostById(id: number) {

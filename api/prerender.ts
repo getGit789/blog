@@ -1,6 +1,5 @@
 import type { Post } from "@db/schema";
 import { postPath, findPostByRef } from "../contracts/slugs";
-import { coverImage, coverDetailImage } from "../contracts/covers";
 
 /**
  * The site is a client-rendered SPA, so every URL used to return the same empty
@@ -151,7 +150,7 @@ function build(route: Route, posts: Post[]): Page | null {
     title: `${post.enTitle} — ${SITE}`,
     description: DESCRIPTION_BY_TITLE[post.enTitle] ?? clamp(post.enSubtitle || post.enContent),
     path: postPath(post),
-    image: coverDetailImage(post),
+    image: post.detailImage || post.image,
     type: "article",
     post,
     body:

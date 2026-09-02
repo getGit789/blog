@@ -1,6 +1,5 @@
 import type { Post } from "@db/schema";
 import { postSlug } from "./slugs";
-import { coverImage, coverDetailImage } from "./covers";
 
 // Frontend-facing BlogPost shape — compatible with existing UI components
 export interface PostContent {
@@ -31,8 +30,8 @@ export function toBlogPost(post: Post): BlogPost {
     id: post.id,
     slug: postSlug(post),
     year: post.year,
-    image: coverImage(post),
-    detailImage: coverDetailImage(post),
+    image: post.image,
+    detailImage: post.detailImage || post.image,
     rs: {
       title: post.rsTitle,
       subtitle: post.rsSubtitle,
