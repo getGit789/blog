@@ -26,6 +26,9 @@ export default function PostDetail({ posts }: PostDetailProps) {
   const post = posts.find((p) => p.slug === slug || String(p.id) === slug);
 
   useEffect(() => {
+    // SPA route swaps keep the window's scroll position from the feed, so a
+    // post opened from far down the list started far down the article too.
+    window.scrollTo(0, 0);
     if (contentRef.current) {
       gsap.fromTo(
         contentRef.current,
