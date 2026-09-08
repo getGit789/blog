@@ -14,3 +14,8 @@ export function webpFor(src: string): string | null {
   if (!src.startsWith("/images/covers/")) return null;
   return src.replace(/\.jpe?g$/i, ".webp");
 }
+
+/** The first "video: /path.mp4" block in a post body, or null. A post with a clip shows it in the feed instead of the cover. */
+export function videoFor(detailContent: string): string | null {
+  return /^video: (\S+)/m.exec(detailContent)?.[1] ?? null;
+}

@@ -7,7 +7,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import type { BlogPost } from "../../contracts/blog";
 import PostCover from "./PostCover";
 import CoverImage from "./CoverImage";
-import { hasRealImage } from "@/lib/covers";
+import { hasRealImage, videoFor } from "@/lib/covers";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -103,7 +103,24 @@ export default function MiddleColumn({ posts }: MiddleColumnProps) {
                       transform: isHovered ? "scale(1.025)" : "scale(1)",
                     }}
                   >
-                    {hasRealImage(post.image) ? (
+                    {videoFor(content.detailContent) ? (
+                      <video
+                        src={videoFor(content.detailContent)!}
+                        aria-label={content.title}
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        preload="metadata"
+                        className="block transition-all duration-500"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          filter: isHovered ? "grayscale(100%) brightness(0.92)" : "none",
+                        }}
+                      />
+                    ) : hasRealImage(post.image) ? (
                       <CoverImage
                         src={post.image}
                         alt={content.title}
