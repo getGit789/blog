@@ -10,6 +10,7 @@ const SLUG_BY_TITLE: Record<string, string> = {
   "Running Linux on Everything": "fedora-43-thinkpad-t14-setup",
   "Poker and the Mental Game": "poker-lessons-engineering-decisions",
   "Beekio, One Person": "building-beekio-ai-beekeeping-assistant",
+  "Murmur, Speak and It Types": "murmur-push-to-talk-dictation-windows",
 };
 
 type PostRef = { id: number; enTitle: string };

@@ -286,12 +286,150 @@ Na kontakt stranici piše da je Beekio mali tim i da svaku poruku pročita neko 
 
 Ako držiš pčele, ili znaš nekog ko drži, tu je na beekio.com. Lista čekanja je otvorena.`;
 
+export const MURMUR_DETAIL_EN = `Hold Right Ctrl. Say the sentence. Let go. The words show up in whatever window you were in, the terminal, a chat, the email you were about to type by hand. That is the whole product, and most of the work went into making that one sentence true in every app on the machine.
+
+Murmur is a push to talk dictation app for Windows. With the local engine your voice never leaves the computer. No account, no subscription, nothing phoning home.
+
+video: /videos/murmur-promo.mp4
+
+## Two engines
+
+Out of the box it listens with a Whisper model running on your own CPU. Private and free, and it takes its time.
+
+So there's a second engine. Fast Mode sends the audio to Groq, a free cloud service that comes back with text in about a second. Murmur offers to set it up the first time you open it, and it's three steps: open the Groq key page, copy the key, paste it into Murmur. The key lives in %APPDATA%\\Murmur\\groq.key on your own disk and is never in the download. If the network drops, Murmur falls back to the local model without making a fuss about it.
+
+That's the tradeoff. Private and slow, or fast and your audio goes to a third party. You pick, and you can turn Fast Mode on any time from the File menu.
+
+## Why the dictionary has two mechanisms
+
+Speech models don't know your words. "Claude Code" comes back as "cloud code", Supabase becomes "super base", and no amount of enunciating fixes it. Murmur handles this with a dictionary, a TOML file at %APPDATA%\\Murmur\\dictionary.toml that you can edit in the app or by hand.
+
+terms = ["Anthropic", "Vercel", "Supabase"]
+[corrections]
+"cloud code" = "Claude Code"
+
+The terms go to the engine as a short hint before it listens, so it leans toward your spelling. The corrections run as a pass after it listens. It needs both, because biasing is a nudge, not a promise. The correction pass is what guarantees the result.
+
+The hint is kept deliberately short: the first 32 terms and at most 380 characters. A long hint makes these models drift and invent text on quiet audio, which is worse than the typo you were trying to fix.
+
+The correction rules do some quiet work too. One rule for cloud code catches Cloud-Code, cloud_code and CloudCode. Longest match wins, so a rule for cloud code cli beats the one for cloud code. And a pattern has to match whole words, so the cloud code rule never touches Cloudflare or the plain word cloud. If you try to add a rule that would rewrite ordinary English, the app warns you before it saves.
+
+## It learns from your fixes
+
+Every transcript stays in the Transcripts panel, searchable, with a Copy button on each row and a Fixed column showing which rules fired. When it heard something wrong, double-click the line, fix the word, press Enter. Murmur compares your fix with what it heard, writes a dictionary rule out of the difference, and adds the corrected name to the bias list. Next time it leans your way before it even listens.
+
+It's careful about this on purpose. Only short, word for word swaps are learned. Rewriting a whole sentence teaches it nothing, and a rule that would change ordinary English gets refused.
+
+## What happens between key down and key up
+
+The pipeline is a handful of small files. hotkey.py is a global key listener on pynput. audio.py records the mic at 16 kHz mono and reports the live level for the meter. When you let go, the dictionary hands its hint to the engine, either local_whisper.py or groq_api.py, and the text comes back. The correction pass runs. Then cleanup, which is either rules.py, free and instant, or llm.py, which goes through Claude. inject.py copies the result, sends Ctrl+V, and puts your old clipboard back. history.py writes it to disk so the window can show it later.
+
+ui/controller.py drives all of that off the UI thread, so the window and the level needle never stutter while the model is thinking. The engine layer didn't change to build the interface, which I count as a small win.
+
+## A real window
+
+I wanted a real Windows application, not another tray utility. Taskbar icon, Alt+Tab, a resizable window, a menu bar. Settings on Ctrl+comma. There is a tray icon too, but it's secondary: it keeps the hotkey alive while you're in another app. Closing the window leaves Murmur running in the tray, and Ctrl+Q quits for real.
+
+The look is a 1990s MiniDisc deck. Light silver body, honest Windows 95 bevels, and one dark glass display with bright teal segments behind it, holding the record lamp, the status, the elapsed counter and the level meter. Teal is the accent, the same family as the tray icon. Red is reserved for the record lamp and nothing else. The level meter is green and amber with a peak marker that hangs back and falls slowly, like the hold LED on real gear. Silkscreen labels, monospaced counters, no drop shadows. Every colour, size and spacing value lives in one tokens file, and every view pulls from it, so there are no one-off numbers hiding in components.
+
+## Installing it
+
+There's a normal installer on the Releases page. Windows will show its blue "Windows protected your PC" box once, because Murmur is unsigned open source software. Click More info, then Run anyway. It scans clean in Defender and it doesn't need admin rights. The setup asks whether you want a desktop shortcut and whether to start with Windows, and after that Murmur shows up in Start and in Settings, Apps, like any other program. Uninstall from there too. Your settings and history stay in %APPDATA%\\Murmur unless you delete the folder yourself.
+
+If you'd rather not run an installer, there's a portable zip. Extract it, run Murmur.exe, done. No shortcuts, no auto start.
+
+The built app is about 340 MB, which is what carrying a local speech engine costs. I'm not thrilled about it, but it's the price of the private option working with nothing else installed.
+
+## Not built yet
+
+Command mode. Saying "make this more formal" and having it rewrite the selection. It's on the list.
+
+Murmur is MIT licensed and the code is at github.com/getGit789/murmur.`;
+
+export const MURMUR_DETAIL_RS = `Držiš desni Ctrl. Kažeš rečenicu. Pustiš. Reči se pojave u prozoru u kom si bio, u terminalu, u chatu, u mejlu koji si taman krenuo da kucaš. To je ceo proizvod, a najveći deo posla je otišao na to da ta jedna rečenica bude tačna u svakoj aplikaciji na mašini.
+
+Murmur je push to talk diktiranje za Windows. Sa lokalnim engine-om tvoj glas nikad ne napušta računar. Nema naloga, nema pretplate, ništa ne zove kući.
+
+video: /videos/murmur-promo.mp4
+
+## Dva engine-a
+
+Iz kutije sluša sa Whisper modelom koji se vrti na tvom CPU-u. Privatno i besplatno, i ne žuri mu se.
+
+Zato postoji i drugi engine. Fast Mode šalje zvuk na Groq, besplatan cloud servis koji vrati tekst za otprilike sekund. Murmur ti ponudi da to podesiš prvi put kad ga otvoriš, i to su tri koraka: otvoriš Groq stranicu za ključ, kopiraš ključ, nalepiš ga u Murmur. Ključ stoji u %APPDATA%\\Murmur\\groq.key na tvom disku i nikad nije u samom downloadu. Ako mreža pukne, Murmur se bez galame vrati na lokalni model.
+
+To je ceo kompromis. Privatno i sporo, ili brzo i zvuk ide trećoj strani. Ti biraš, a Fast Mode možeš da uključiš kad god hoćeš iz File menija.
+
+## Zašto rečnik ima dva mehanizma
+
+Modeli za govor ne znaju tvoje reči. "Claude Code" se vrati kao "cloud code", Supabase postane "super base", i nikakvo naglašavanje to ne popravlja. Murmur to rešava rečnikom, TOML fajlom na %APPDATA%\\Murmur\\dictionary.toml, koji možeš da menjaš u aplikaciji ili ručno.
+
+terms = ["Anthropic", "Vercel", "Supabase"]
+[corrections]
+"cloud code" = "Claude Code"
+
+Termini idu engine-u kao kratak nagoveštaj pre nego što sluša, da se nagne ka tvom pisanju. Ispravke se vrte kao prolaz posle slušanja. Trebaju oba, jer je nagoveštaj samo gurkanje, ne obećanje. Prolaz sa ispravkama je ono što garantuje rezultat.
+
+Nagoveštaj je namerno kratak: prva 32 termina i najviše 380 znakova. Dug nagoveštaj tera ove modele da lutaju i izmišljaju tekst na tihom snimku, a to je gore od greške koju si hteo da popraviš.
+
+Pravila za ispravke rade i par stvari u tišini. Jedno pravilo za cloud code hvata i Cloud-Code, cloud_code i CloudCode. Najduže poklapanje pobeđuje, pa pravilo za cloud code cli ima prednost nad onim za cloud code. A šablon mora da se poklopi sa celom reči, pa pravilo za cloud code nikad ne dira Cloudflare ni običnu reč cloud. Ako pokušaš da dodaš pravilo koje bi prepravljalo običan engleski, aplikacija te upozori pre nego što sačuva.
+
+## Uči iz tvojih ispravki
+
+Svaki transkript ostaje u panelu Transcripts, sa pretragom, Copy dugmetom na svakom redu i kolonom Fixed koja pokazuje koja su pravila okinula. Kad je čuo pogrešno, dupli klik na red, ispraviš reč, Enter. Murmur uporedi tvoju ispravku sa onim što je čuo, iz razlike napiše pravilo za rečnik i doda ispravljeno ime u listu za nagoveštaj. Sledeći put se nagne ka tebi pre nego što uopšte počne da sluša.
+
+Namerno je oprezan oko toga. Uči se samo kratka zamena reč za reč. Prepravljanje cele rečenice ga ne uči ničemu, a pravilo koje bi menjalo običan engleski se odbija.
+
+## Šta se dešava između pritiska i puštanja tastera
+
+Pipeline je šaka malih fajlova. hotkey.py je globalni slušač tastature na pynput. audio.py snima mikrofon na 16 kHz mono i javlja nivo uživo za merač. Kad pustiš taster, rečnik preda svoj nagoveštaj engine-u, ili local_whisper.py ili groq_api.py, i tekst se vrati. Prođe prolaz sa ispravkama. Onda cleanup, ili rules.py, besplatno i trenutno, ili llm.py, koji ide preko Claude-a. inject.py kopira rezultat, pošalje Ctrl+V i vrati ti stari clipboard. history.py to upiše na disk da bi prozor mogao kasnije da ga prikaže.
+
+ui/controller.py sve to vozi van UI niti, pa prozor i kazaljka merača nikad ne štucnu dok model razmišlja. Sloj sa engine-ima nije menjan da bi se napravio interfejs, i to računam kao malu pobedu.
+
+## Pravi prozor
+
+Hteo sam pravu Windows aplikaciju, ne još jedan tray alat. Ikonica u taskbaru, Alt+Tab, prozor koji može da se širi, meni bar. Podešavanja na Ctrl+zarez. Postoji i tray ikonica, ali je sporedna: drži hotkey živim dok si u drugoj aplikaciji. Zatvaranje prozora ostavlja Murmur da radi u tray-u, a Ctrl+Q ga stvarno gasi.
+
+Izgled je MiniDisc dek iz devedesetih. Svetlo srebrno telo, pošteni Windows 95 bevel-i, i jedan tamni stakleni displej sa svetlim teal segmentima iza, u kom su lampica za snimanje, status, brojač vremena i merač nivoa. Teal je akcenat, ista familija kao tray ikonica. Crvena je rezervisana za lampicu za snimanje i ni za šta drugo. Merač nivoa je zelen i amber, sa peak markerom koji zaostane i polako pada, kao hold LED na pravoj opremi. Silkscreen natpisi, monospace brojači, bez senki. Svaka boja, veličina i razmak žive u jednom fajlu sa tokenima, i svaki view vuče odatle, pa nema jednokratnih brojeva sakrivenih po komponentama.
+
+## Instalacija
+
+Na Releases stranici je običan installer. Windows će jednom pokazati plavi prozor "Windows protected your PC", jer je Murmur nepotpisan open source softver. Klikneš More info, pa Run anyway. Defender ga skenira čist i ne trebaju mu admin prava. Setup pita hoćeš li prečicu na desktopu i hoćeš li da se pali sa Windowsom, i posle toga Murmur stoji u Startu i u Settings, Apps, kao svaki drugi program. Odatle se i briše. Podešavanja i istorija ostaju u %APPDATA%\\Murmur dok sam ne obrišeš folder.
+
+Ako nećeš installer, tu je portable zip. Raspakuješ, pokreneš Murmur.exe, gotovo. Bez prečica, bez auto starta.
+
+Sklopljena aplikacija ima oko 340 MB, toliko košta lokalni engine za govor. Nisam oduševljen, ali to je cena da privatna opcija radi bez ičeg drugog instaliranog.
+
+## Još nije napravljeno
+
+Command mode. Da kažeš "make this more formal" i da ti prepravi selekciju. Na listi je.
+
+Murmur je pod MIT licencom, a kod je na github.com/getGit789/murmur.`;
+
 export const seedPosts = [
+  {
+    year: "2026",
+    image: "/images/covers/murmur.jpg",
+    detailImage: "/images/covers/murmur-detail.jpg",
+    sortOrder: 1,
+    enTitle: "Murmur, Speak and It Types",
+    enSubtitle: "Push to talk dictation for Windows that keeps your voice on your own machine",
+    enCollection: "Projects",
+    enContent:
+      "A push to talk dictation app for Windows. Hold Right Ctrl, talk, let go, and the words land in whatever window you're in. Local Whisper by default, Groq when you want speed, and a dictionary that learns from your corrections.",
+    enDetailContent: MURMUR_DETAIL_EN,
+    rsTitle: "Murmur, pričaš i ono kuca",
+    rsSubtitle: "Push to talk diktiranje za Windows koje tvoj glas ne šalje nigde",
+    rsCollection: "Projekti",
+    rsContent:
+      "Push to talk diktiranje za Windows. Držiš desni Ctrl, pričaš, pustiš, i reči se upišu u prozor u kom si. Lokalni Whisper po defaultu, Groq kad hoćeš brzinu, i rečnik koji uči iz tvojih ispravki.",
+    rsDetailContent: MURMUR_DETAIL_RS,
+  },
   {
     year: "2026",
     image: "/images/covers/beekio.jpg",
     detailImage: "/images/covers/beekio-detail.jpg",
-    sortOrder: 1,
+    sortOrder: 2,
     enTitle: "Beekio, One Person",
     enSubtitle: "Running a beekeeping SaaS end to end, alone",
     enCollection: "Projects",
@@ -309,7 +447,7 @@ export const seedPosts = [
     year: "2026",
     image: "/images/covers/self-hosted-lab-v3.webp",
     detailImage: "/images/covers/self-hosted-lab-detail.jpg",
-    sortOrder: 2,
+    sortOrder: 3,
     enTitle: "Self Hosted Lab v2",
     enSubtitle: "Rebuilding My Home Lab from Scratch",
     enCollection: "Projects",
@@ -327,7 +465,7 @@ export const seedPosts = [
     year: "2026",
     image: "/images/covers/wpas-ai-assistant.jpg",
     detailImage: "/images/covers/wpas-ai-assistant-detail.jpg",
-    sortOrder: 3,
+    sortOrder: 4,
     enTitle: "WPAS AI Assistant",
     enSubtitle: "Building an AI Assistant That Actually Ships",
     enCollection: "Projects",
@@ -345,7 +483,7 @@ export const seedPosts = [
     year: "2026",
     image: "/images/covers/sudowear-v3.webp",
     detailImage: "/images/covers/sudowear-detail.jpg",
-    sortOrder: 4,
+    sortOrder: 5,
     enTitle: "Building SudoWear",
     enSubtitle: "Running an Online Store as a One Man Ops Team",
     enCollection: "Indie Dev",
@@ -363,7 +501,7 @@ export const seedPosts = [
     year: "2025",
     image: "/images/covers/five-years-support-v2.webp",
     detailImage: "/images/covers/five-years-support-detail.jpg",
-    sortOrder: 5,
+    sortOrder: 6,
     enTitle: "Five Years in Support",
     enSubtitle: "What AT&T and Mozzartbet Taught Me About Systems",
     enCollection: "Notes",
@@ -381,7 +519,7 @@ export const seedPosts = [
     year: "2025",
     image: "/images/covers/linux-everything.jpg",
     detailImage: "/images/covers/linux-everything-detail.jpg",
-    sortOrder: 6,
+    sortOrder: 7,
     enTitle: "Running Linux on Everything",
     enSubtitle: "One OS, Every Machine, Zero Regrets",
     enCollection: "Tooling",
@@ -399,7 +537,7 @@ export const seedPosts = [
     year: "2024",
     image: "/images/covers/poker-mental-game-v3.webp",
     detailImage: "/images/covers/damir-poker-trophy.webp",
-    sortOrder: 7,
+    sortOrder: 8,
     enTitle: "Poker and the Mental Game",
     enSubtitle: "Expected Value, Tilt, and Thinking in Bets",
     enCollection: "Notes",

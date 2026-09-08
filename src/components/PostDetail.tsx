@@ -112,6 +112,20 @@ export default function PostDetail({ posts }: PostDetailProps) {
               <h2 key={idx} className="prose-h2" style={{ color: "var(--text-charcoal)" }}>
                 {para.slice(3)}
               </h2>
+            ) : para.startsWith("video: ") ? (
+              // A block "video: /videos/x.mp4" is an inline clip. Muted, so
+              // browsers allow autoplay; controls so it can be paused.
+              <video
+                key={idx}
+                src={para.slice(7).trim()}
+                autoPlay
+                muted
+                loop
+                playsInline
+                controls
+                preload="metadata"
+                style={{ display: "block", width: "100%", margin: "2em 0", border: "1px solid var(--border-light)" }}
+              />
             ) : (
               <p
                 key={idx}

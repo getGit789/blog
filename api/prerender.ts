@@ -40,6 +40,8 @@ const DESCRIPTION_BY_TITLE: Record<string, string> = {
     "What tournament poker taught me about engineering: expected value, process over outcomes, tilt during incidents, and bankroll thinking as risk management.",
   "Beekio, One Person":
     "Building Beekio alone: an AI assistant that turns hive inspections into a 24 to 48 hour action plan for beekeepers, and everything that broke on the way.",
+  "Murmur, Speak and It Types":
+    "Murmur is a push to talk dictation app for Windows: hold Right Ctrl, talk, let go. Local Whisper by default, Groq for speed, and a dictionary that learns from your fixes.",
 };
 
 export type Route =
@@ -83,7 +85,13 @@ const paras = (text: string) =>
     .split("\n\n")
     .map((p) => p.trim())
     .filter(Boolean)
-    .map((p) => (p.startsWith("## ") ? `<h2>${esc(p.slice(3))}</h2>` : `<p>${esc(p)}</p>`))
+    .map((p) =>
+      p.startsWith("## ")
+        ? `<h2>${esc(p.slice(3))}</h2>`
+        : p.startsWith("video: ")
+          ? `<video src="${esc(p.slice(7).trim())}" muted controls playsinline></video>`
+          : `<p>${esc(p)}</p>`,
+    )
     .join("");
 
 const postItem = (p: Post) =>

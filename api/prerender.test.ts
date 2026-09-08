@@ -155,6 +155,13 @@ describe("prerender", () => {
     expect(out).not.toContain("<p>## The first section</p>");
   });
 
+  it("renders 'video: ' blocks in post text as a video tag", () => {
+    const clip = post(1, { enDetailContent: "Intro.\n\nvideo: /videos/clip.mp4\n\nAfter." });
+    const out = render("/post/1", [clip])!;
+    expect(out).toContain('<video src="/videos/clip.mp4"');
+    expect(out).not.toContain("<p>video:");
+  });
+
   it("escapes html and does not expand $ patterns from post text", () => {
     const nasty = post(1, {
       enTitle: "Cost: $5 & <script>",
