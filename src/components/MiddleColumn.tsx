@@ -69,6 +69,9 @@ export default function MiddleColumn({ posts }: MiddleColumnProps) {
         {posts.map((post, index) => {
           const content = post[language];
           const isHovered = hoveredImage === post.id;
+          // ponytail: feed clips are assumed 16:9 (the covers are 16:10); read
+          // videoWidth/videoHeight on loadedmetadata if a different ratio ever ships.
+          const clip = videoFor(content.detailContent);
           return (
             <article
               key={post.id}
@@ -93,7 +96,7 @@ export default function MiddleColumn({ posts }: MiddleColumnProps) {
                   style={{
                     border: "1px solid var(--border-light)",
                     marginBottom: "18px",
-                    aspectRatio: "16 / 10",
+                    aspectRatio: clip ? "16 / 9" : "16 / 10",
                   }}
                 >
                   <div
@@ -103,9 +106,9 @@ export default function MiddleColumn({ posts }: MiddleColumnProps) {
                       transform: isHovered ? "scale(1.025)" : "scale(1)",
                     }}
                   >
-                    {videoFor(content.detailContent) ? (
+                    {clip ? (
                       <video
-                        src={videoFor(content.detailContent)!}
+                        src={clip}
                         aria-label={content.title}
                         autoPlay
                         muted
